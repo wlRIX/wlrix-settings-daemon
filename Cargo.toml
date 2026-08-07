@@ -1,0 +1,52 @@
+[package]
+name = "wlrix-settings-daemon"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+description = "wlRIX settings daemon — the single writer of the wlRIX config files, over D-Bus."
+repository = "https://github.com/wlrix/wlrix-settings-daemon"
+publish = false
+
+[dependencies]
+# D-Bus. This program *is* a D-Bus service: it owns `com.wlrix.Settings` and is the only thing
+# in wlRIX that writes a hand-edited config file. Everything else -- a settings app, a script,
+# `busctl` -- asks it to.
+#
+# The default `async-io` and `blocking-api` features are kept and `tokio` is deliberately not
+# enabled, as in `wlrix-idle` and the portal. Unlike both of those there is no calloop here and
+# no Wayland connection, so the blocking API is used directly: the connection is built on the
+# main thread, which then goes on to own the inotify loop, and zbus dispatches method calls on
+# its own executor behind it. See `src/dbus/mod.rs`.
+zbus = "5"
+# Reading the config files. TOML is wlRIX's config format throughout, and this is the same crate
+# -- and the same `+spec-1.1.0` dialect -- every component parses its own file with, so what the
+# daemon accepts and what the compositor accepts cannot drift apart in the parser.
+serde = { version = "1", features = ["derive"] }
+toml = "1"
+# *Writing* them. `toml` serializes a value; it cannot edit a document, and a full rewrite would
+# throw away every comment and the user's key order -- in files whose whole premise is that they
+# are still hand-edited.
+#
+# `toml_edit` keeps the document's formatting and touches only the key asked for. Same author as
+# `toml`, same TOML spec version, and already compiled in every wlRIX tree today (as the build
+# dependency `proc-macro-crate` pulls in for the zbus and enumflags2 macros), so this is a crate
+# already present here rather than a new one.
+#
+# The alternative was porting wlrix-apps' hand-rolled line editor
+# (`Wlrix.Settings.Keyboard/Services/CompositorConfig.cs`). It cannot see a dotted key, an
+# inline table, a multi-line string or a section header with a comment after it -- and on that
+# last one it appends a *second* `[keyboard]` table, which `toml` then rejects, costing the user
+# their whole compositor config. Deleting it is half the reason this program exists.
+toml_edit = "0.25"
+# `fs::inotify`, for noticing that a config file was edited by hand -- which must keep working,
+# and is what the change signal is for. Already in the tree via zbus's async-io, the same reason
+# wlrix-desktop and wlrix-idle reach for it; the watch is modelled on wlrix-desktop's.
+rustix = { version = "1", features = ["fs", "event"] }
+# `kill(pid, SIGHUP)`, to tell an owning process that its config changed. The pidfile
+# arrangement is the compositor's and wlrix-idle's, unchanged.
+libc = "0.2"
+# Logging. This runs as a systemd user unit, so stderr is the journal -- the same reason
+# xdg-desktop-portal-wlrix uses tracing while wlrix-idle and wlrix-desktop, whose output is
+# redirected into the session log, hand-roll a macro pair instead.
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

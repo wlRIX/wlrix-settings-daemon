@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.wlrix.Settings
+Exec=@BINDIR@/wlrix-settings-daemon
+SystemdService=wlrix-settings-daemon.service

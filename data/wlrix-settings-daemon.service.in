@@ -1,0 +1,14 @@
+[Unit]
+Description=wlRIX settings service
+PartOf=graphical-session.target
+# Deliberately no `ConditionEnvironment=WAYLAND_DISPLAY`, unlike xdg-desktop-portal-wlrix. That
+# backend is a Wayland client and can only fail without a display; this one holds no Wayland
+# connection at all, so it is equally useful from a TTY, from a `busctl` probe, or to a program
+# that wants to read a setting before there is a compositor. Nor an `After=`, for the same
+# reason -- there is nothing to wait for.
+
+[Service]
+Type=dbus
+BusName=com.wlrix.Settings
+ExecStart=@BINDIR@/wlrix-settings-daemon
+Restart=on-failure
