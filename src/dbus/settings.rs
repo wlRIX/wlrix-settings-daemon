@@ -505,31 +505,54 @@ fn from_variant(value: &Value<'_>) -> Option<edit::Value> {
 mod tests {
     use super::*;
 
+    /// Every `<!-- ... -->` in `xml`, as an XML parser would delimit them.
+    fn comments(xml: &str) -> Vec<&str> {
+        let mut found = Vec::new();
+        let mut rest = xml;
+        while let Some(open) = rest.find("<!--") {
+            let body = &rest[open + 4..];
+            let Some(close) = body.find("-->") else {
+                // An unterminated comment is its own kind of broken, and the assertion below is
+                // not the place to discover it.
+                break;
+            };
+            found.push(&body[..close]);
+            rest = &body[close + 3..];
+        }
+        found
+    }
+
+    /// `--` is forbidden inside an XML comment, and zbus writes the `///` doc comments on this
+    /// interface's methods into one **verbatim** -- no escaping, see `to_xml_docs` in
+    /// zbus_macros. The workspace writes its em-dashes as `--`, which everywhere else is fine
+    /// and here produces introspection that no strict XML parser will read.
+    ///
+    /// Not cosmetic: introspection is what a client's proxy generator consumes, and
+    /// `Wlrix.Settings.Client`'s could not be generated at all until this was fixed. The same
+    /// latent defect was found in `xdg-desktop-portal-wlrix` and fixed there, with the same
+    /// test.
+    ///
+    /// The rendered XML is checked rather than the source text, so this cannot be fooled by
+    /// where the comment happens to be written -- and it fails for the real reason rather than
+    /// for a proxy of it. (The `--` in this very comment is safe: `//` and `//!` comments are
+    /// not exported, and neither are the doc comments on a test.)
     #[test]
-    fn no_exported_doc_comment_contains_a_double_hyphen() {
-        // zbus copies the `///` comments in this file straight into the introspection XML, as
-        // XML comments -- and `--` is *forbidden* inside one. The result is introspection that
-        // no strict XML parser will read, which is exactly what a client's proxy generator is.
-        //
-        // The workspace writes its em-dashes as `--`, and everywhere else that is fine. Here it
-        // is a wire defect, so the doc comments in this file use a real em-dash instead. This
-        // test is what keeps the next edit from quietly reintroducing it.
-        //
-        // Only `///` lines: `//!` module docs and `//` comments are not exported, which is why
-        // the ones at the top of this file still read `--`.
-        let source = include_str!("settings.rs");
-        let offenders: Vec<&str> = source
-            .lines()
-            .map(str::trim_start)
-            .filter(|line| line.starts_with("///") && line.contains("--"))
-            // The error-name list is prose about `not-running` and friends, not an em-dash.
-            .filter(|line| !line.contains("`not-running`") && !line.contains("`restart-required`"))
-            .collect();
-        assert!(
-            offenders.is_empty(),
-            "these would make the introspection XML unparseable:\n{}",
-            offenders.join("\n")
-        );
+    fn no_doc_comment_can_break_the_introspection_xml() {
+        use zbus::object_server::Interface;
+
+        let settings = Settings::new(Store::load(crate::paths::Roots::from_environment()));
+        let mut xml = String::new();
+        settings.introspect_to_writer(&mut xml, 0);
+
+        // A sanity check on the test itself: an interface that rendered nothing would pass the
+        // real assertion trivially.
+        assert!(xml.contains("<interface"), "introspected to nothing");
+        for comment in comments(&xml) {
+            assert!(
+                !comment.contains("--"),
+                "this doc comment makes the introspection XML unparseable:\n{comment}"
+            );
+        }
     }
 
     #[test]

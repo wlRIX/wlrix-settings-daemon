@@ -243,5 +243,5 @@ component's own tests as a fixture.
 - The collection surface (`ListItems`/`AddItem`/`RemoveItem`/`SetItemField`) for the sections listed above.
 - `wlrix-desktop/src/session.rs` keeps its own copy of the pidfile-and-signal logic for Log Out. It should stay that way
   while the desktop must boot without this daemon.
-- `wlrix-epoch` registration: the `.gitmodules` entry and the `rust_repos` line are waiting on
-  `github.com/wlRIX/wlrix-settings-daemon` to exist. Until then this builds and installs from its own `Justfile`.
+- Nothing yet drives `just check-schema` in CI; it needs every component built, so it belongs in
+  a `wlrix-epoch` workflow rather than in this repo's.
