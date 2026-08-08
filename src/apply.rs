@@ -9,8 +9,8 @@
 //!
 //! ## Not every owner can be told
 //!
-//! - **`wlrix-compositor`**, **`wlrix-idle`**: pidfile and `SIGHUP`. Works.
-//! - **`wlrix-desktop`**: writes no pidfile and installs no handler. Nothing to signal yet.
+//! - **`wlrix-compositor`**, **`wlrix-idle`**, **`wlrix-desktop`**, **`wlrix-bg`**: pidfile and
+//!   `SIGHUP`. Works.
 //! - **`xdg-desktop-portal-wlrix`**: has no reload *deliberately* -- its own `signals.rs` says
 //!   a screen share is not something to reconfigure underneath. The right action would be
 //!   `systemctl --user try-restart`, but only when no cast is live, and the daemon has no way
@@ -196,6 +196,8 @@ mod tests {
         assert_eq!(Owner::Compositor.pidfile(), Some("wlrix-compositor.pid"));
         assert_eq!(Owner::Idle.pidfile(), Some("wlrix-idle.pid"));
         assert_eq!(Owner::Desktop.pidfile(), Some("wlrix-desktop.pid"));
+        // Named for the binary, `wlrix-bg`, not for its config file's stem, `background`.
+        assert_eq!(Owner::Background.pidfile(), Some("wlrix-bg.pid"));
         // The portal has none deliberately: its own signals.rs says a screen share is not
         // something to reconfigure underneath it, so there is nothing a signal could ask for.
         assert_eq!(Owner::Portal.pidfile(), None);

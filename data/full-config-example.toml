@@ -4,6 +4,14 @@
 # each block below belongs in a different file, and settings with no default are
 # commented out because absent and empty do not mean the same thing.
 
+# ---- background.toml ----
+# Wallpaper
+# image =    # no default; unset by default
+# How the wallpaper is fitted
+mode = "fill"
+# Desktop color
+color = "#555555"
+
 # ---- compositor.toml ----
 
 [keyboard]

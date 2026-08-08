@@ -131,6 +131,13 @@ impl From<edit::Error> for Error {
 /// later version, and nothing in the current signatures blocks it.
 const DEFERRED: &[(&str, &str)] = &[
     (
+        "background.output",
+        "a per-monitor wallpaper is a picture, a mode and a color that only mean anything \
+         together with the connector name they hang off, so it is a collection rather than a \
+         setting. Unlike the compositor's [[output]] this one would apply live, so it is first in \
+         line when the collection surface lands. Edit background.toml by hand for now",
+    ),
+    (
         "compositor.output",
         "per-monitor settings are not written here. The machine-written outputs.toml is \
          layered on top of them, so a value set here is overridden the moment the compositor \
@@ -1097,6 +1104,8 @@ mod tests {
         // hand. The message has to send them to wlr-output-management rather than leaving them
         // to conclude the daemon is broken.
         for key in [
+            "background.output",
+            "background.output.image",
             "compositor.output",
             "compositor.output.mode",
             "idle.timeout.after_secs",
@@ -1132,6 +1141,9 @@ mod tests {
         // `session.compositor` starts with neither `session.app` nor `session.env`, but a
         // sloppy prefix match on `session` would have caught it.
         assert!(resolve("session.compositor").is_ok());
+        // Likewise `background.output` must not swallow `background.image`, which is the one
+        // real setting in that namespace whose name is closest to it.
+        assert!(resolve("background.image").is_ok());
     }
 
     #[test]

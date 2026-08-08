@@ -472,7 +472,7 @@ const CHECK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
 /// Ask the owning program whether it would accept this file.
 ///
 /// **This is the part that makes the daemon safe to trust.** `src/schema/table.rs` is a
-/// hand-kept copy of what four other repos' serde types accept, and a hand-kept copy drifts.
+/// hand-kept copy of what five other repos' serde types accept, and a hand-kept copy drifts.
 /// With `#[serde(deny_unknown_fields)]` everywhere in wlRIX, a drifted key does not produce a
 /// wrong setting -- it makes the owner reject the *whole file* and fall back to built-in
 /// defaults, which is the user's entire configuration gone. Running their own parser over the

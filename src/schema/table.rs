@@ -22,6 +22,95 @@ const A_DAY: i64 = 86_400;
 
 pub const SETTINGS: &[Setting] = &[
     // ---------------------------------------------------------------------------------------
+    // background.toml -- wlrix-bg/src/config.rs
+    //
+    // All `Reload::Live`: `wlrix-bg` re-reads the file on SIGHUP, drops its decode cache and
+    // repaints every output. Changing a wallpaper is a buffer swap, so there is nothing here
+    // that needs a restart.
+    //
+    // `[[output]]` -- the per-monitor overrides -- is absent for the same reason as the
+    // compositor's and `wlrix-idle`'s `[[timeout]]`: it is a keyed collection, not a scalar
+    // leaf. An override is three fields that only mean anything together with the connector
+    // name they hang off.
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "background.image",
+        file: File::Background,
+        path: &["image"],
+        // No default, and absent is not the same as "": absent means the plain color, which is
+        // what a fresh install shows, and a UI must be able to offer "no picture" as a choice
+        // rather than as an empty text field.
+        kind: Kind::Str { default: None },
+        owner: Owner::Background,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Wallpaper",
+        description: "The picture to show on the desktop, as an absolute path. PNG, JPEG, WebP \
+                      and the rest, plus the formats IRIX shipped its own backgrounds in -- SGI \
+                      (.rgb, .bw) and XPM. Empty shows the color alone.",
+    },
+    Setting {
+        key: "background.mode",
+        file: File::Background,
+        path: &["mode"],
+        kind: Kind::Enum {
+            // Exactly what `#[serde(rename_all = "lowercase")]` on wlrix-bg's `Mode` accepts.
+            // Its own tests assert that "tiled", "centre", "zoom" and every capitalized form are
+            // rejected, so offering one here would cost the user their whole file.
+            default: Some("fill"),
+            choices: &[
+                Choice {
+                    value: "fill",
+                    label: "Fill the screen",
+                },
+                Choice {
+                    value: "fit",
+                    label: "Fit inside the screen",
+                },
+                Choice {
+                    value: "stretch",
+                    label: "Stretch to the screen",
+                },
+                Choice {
+                    value: "center",
+                    label: "Center at full size",
+                },
+                Choice {
+                    value: "tile",
+                    label: "Tile",
+                },
+                Choice {
+                    value: "solid",
+                    label: "Color only",
+                },
+            ],
+        },
+        owner: Owner::Background,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "How the wallpaper is fitted",
+        description: "Fill covers the screen and crops what does not fit; fit shows the whole \
+                      picture with the color in the bars; stretch distorts it to fit exactly; \
+                      center and tile draw it at its own size. Solid ignores the picture.",
+    },
+    Setting {
+        key: "background.color",
+        file: File::Background,
+        path: &["color"],
+        // `#555555` is the palette's DESKTOP role -- the gray IRIX's desktop is under everything
+        // -- and wlrix-bg's own `DEFAULT_COLOR`.
+        kind: Kind::Str {
+            default: Some("#555555"),
+        },
+        owner: Owner::Background,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Desktop color",
+        description: "The color behind the picture, as \"#rrggbb\". Seen in the letterbox bars \
+                      under fit and center, through anything transparent, and over the whole \
+                      screen when there is no picture or the mode is solid.",
+    },
+    // ---------------------------------------------------------------------------------------
     // compositor.toml -- wlrix-compositor/src/config.rs
     //
     // Everything here is `Reload::Live`: `State::reload_config` re-applies `[keyboard]` through

@@ -36,6 +36,7 @@ const SUBDIR: &str = "wlrix";
 /// greetd's, root-owned under `/etc/greetd/`, and not a session setting at all.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum File {
+    Background,
     Compositor,
     Desktop,
     Idle,
@@ -45,6 +46,7 @@ pub enum File {
 
 /// Every file, in the order they are listed and dumped.
 pub const ALL: &[File] = &[
+    File::Background,
     File::Compositor,
     File::Desktop,
     File::Idle,
@@ -56,6 +58,7 @@ impl File {
     /// The namespace a key in this file is prefixed with, which is also the file's stem.
     pub fn namespace(self) -> &'static str {
         match self {
+            Self::Background => "background",
             Self::Compositor => "compositor",
             Self::Desktop => "desktop",
             Self::Idle => "idle",

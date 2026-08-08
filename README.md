@@ -43,6 +43,7 @@ convention `org.freedesktop.login1` follows.
 A key is `<namespace>.<toml path>`, where the namespace is the config file's stem:
 
 ```
+background.mode                 ~/.config/wlrix/background.toml   mode
 compositor.keyboard.layout      ~/.config/wlrix/compositor.toml   [keyboard] layout
 compositor.focus.policy         ~/.config/wlrix/compositor.toml   [focus] policy
 idle.lock.command               ~/.config/wlrix/idle.toml         [lock] command
@@ -51,19 +52,19 @@ portal.preview.tick_ms          ~/.config/wlrix/portal.toml       [preview] tick
 session.compositor              ~/.config/wlrix/session.toml      compositor
 ```
 
-| Member                          | Signature                          |                                                            |
-|---------------------------------|------------------------------------|------------------------------------------------------------|
-| `ListNamespaces`                | `() → as`                          | `compositor`, `desktop`, `idle`, `portal`, `session`       |
-| `Describe` / `DescribeAll`      | `(s) → a{sv}` / `(s) → a{sa{sv}}`  | the schema for one key / a whole panel in one round trip   |
-| `Get` / `GetAll`                | `(s) → v` / `(s) → a{sv}`          | the effective value: the file's, else the declared default |
-| `Sources`                       | `(s) → a{ss}`                      | key → `user` \| `system` \| `default`                      |
-| `Set` / `SetMany`               | `(sv) → a{ss}` / `(a{sv}) → a{ss}` | write; answers what became of it, per owner                |
-| `Reset` / `ResetNamespace`      | `(as) → a{ss}` / `(s) → a{ss}`     | remove keys, so they fall back to their defaults           |
-| `Reload`                        | `() → a{ss}`                       | re-read everything from disk                               |
-| `Invalid`                       | property `a{ss}`                   | files that will not currently parse, and why               |
-| `Version`, `Namespaces`         | properties                         |                                                            |
-| `Changed`                       | signal `(a{sv} values, s origin)`  | one per transaction, not one per key                       |
-| `FileInvalid` / `FileRecovered` | signals                            | a hand-edit broke, or fixed, a file                        |
+| Member                          | Signature                          |                                                                    |
+|---------------------------------|------------------------------------|--------------------------------------------------------------------|
+| `ListNamespaces`                | `() → as`                          | `background`, `compositor`, `desktop`, `idle`, `portal`, `session` |
+| `Describe` / `DescribeAll`      | `(s) → a{sv}` / `(s) → a{sa{sv}}`  | the schema for one key / a whole panel in one round trip           |
+| `Get` / `GetAll`                | `(s) → v` / `(s) → a{sv}`          | the effective value: the file's, else the declared default         |
+| `Sources`                       | `(s) → a{ss}`                      | key → `user` \| `system` \| `default`                              |
+| `Set` / `SetMany`               | `(sv) → a{ss}` / `(a{sv}) → a{ss}` | write; answers what became of it, per owner                        |
+| `Reset` / `ResetNamespace`      | `(as) → a{ss}` / `(s) → a{ss}`     | remove keys, so they fall back to their defaults                   |
+| `Reload`                        | `() → a{ss}`                       | re-read everything from disk                                       |
+| `Invalid`                       | property `a{ss}`                   | files that will not currently parse, and why                       |
+| `Version`, `Namespaces`         | properties                         |                                                                    |
+| `Changed`                       | signal `(a{sv} values, s origin)`  | one per transaction, not one per key                               |
+| `FileInvalid` / `FileRecovered` | signals                            | a hand-edit broke, or fixed, a file                                |
 
 Three things are worth knowing before writing a client.
 
@@ -130,12 +131,15 @@ Array-of-table sections and free-form maps are **not** offered, and asking for o
 not scalar leaves, and want add/remove/reorder rather than get/set — a later surface that nothing in the current
 signatures blocks.
 
-- **`[[output]]`** — four reasons, not just its shape. The machine-written
+- **`[[output]]`** (compositor) — four reasons, not just its shape. The machine-written
   `$XDG_STATE_HOME/wlrix/outputs.toml` is layered on top of it per field, so a value set here is overridden the moment
   the compositor next saves; and `reload_config` never re-runs
   `outputs::resolve`, so nothing would take effect before a restart anyway. The right channel already exists: the
   compositor implements `wlr-output-management`, which applies live and atomically and has a test-and-rollback flow. A
   Displays panel should speak that.
+- **`[[output]]`** (background) — a different section with the same name and the same problem: a per-monitor wallpaper
+  is a picture, a mode and a colour that only mean anything together with the connector name they hang off. Unlike the
+  compositor's, this one *would* apply live, so it is the first candidate for the collection surface below.
 - **`[[timeout]]`** (idle) — a countdown is several fields that only mean anything together.
 - **`[[app]]`, `[env]`** (session) — a list and a free-form map with no fixed keys to describe.
 - **`[preview] tile`** (portal) — a fixed-length pair of numbers, which none of the value shapes here describes.
@@ -243,5 +247,5 @@ component's own tests as a fixture.
 - The collection surface (`ListItems`/`AddItem`/`RemoveItem`/`SetItemField`) for the sections listed above.
 - `wlrix-desktop/src/session.rs` keeps its own copy of the pidfile-and-signal logic for Log Out. It should stay that way
   while the desktop must boot without this daemon.
-- Nothing yet drives `just check-schema` in CI; it needs every component built, so it belongs in
-  a `wlrix-epoch` workflow rather than in this repo's.
+- Nothing yet drives `just check-schema` in CI; it needs every component built, so it belongs in a `wlrix-epoch`
+  workflow rather than in this repo's.
