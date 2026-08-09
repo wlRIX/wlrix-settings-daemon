@@ -40,6 +40,12 @@ opaque_move = true
 # Show window contents while resizing
 opaque_resize = true
 
+[cursor]
+# Cursor theme
+# theme =    # no default; unset by default
+# Cursor size
+# size =    # no default; unset by default
+
 [idle]
 # Blank the screen after (deprecated)
 # blank_after_secs =    # no default; unset by default

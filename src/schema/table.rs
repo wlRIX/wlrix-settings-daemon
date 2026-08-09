@@ -114,9 +114,14 @@ pub const SETTINGS: &[Setting] = &[
     // compositor.toml -- wlrix-compositor/src/config.rs
     //
     // Everything here is `Reload::Live`: `State::reload_config` re-applies `[keyboard]` through
-    // `set_xkb_config`/`change_repeat_info` and re-arms the blank timer, and `[focus]`/
-    // `[windows]` are read at the point of use, so a reloaded config is in force for the next
-    // click. `[[output]]` is the exception and is absent from this table -- see below.
+    // `set_xkb_config`/`change_repeat_info`, reloads the cursor theme when `[cursor]` changed and
+    // re-arms the blank timer, and `[focus]`/`[windows]` are read at the point of use, so a
+    // reloaded config is in force for the next click. `[[output]]` is the exception and is absent
+    // from this table -- see below.
+    //
+    // `[cursor]` is live for the *compositor's* pointer only. Clients read XCURSOR_THEME from
+    // their own environment, fixed when they were started, so a running app keeps the theme it
+    // launched with however many reloads happen; the change is whole at the next login.
     // ---------------------------------------------------------------------------------------
     Setting {
         key: "compositor.keyboard.rules",
@@ -268,6 +273,46 @@ pub const SETTINGS: &[Setting] = &[
         description: "Off rubber-bands the frame and configures the client once, on release, \
                       rather than on every motion event -- which is the cheaper of the two by \
                       a wide margin on a large window.",
+    },
+    Setting {
+        key: "compositor.cursor.theme",
+        file: File::Compositor,
+        path: &["cursor", "theme"],
+        // No default, and for the same reason as `compositor.keyboard.layout`: absent is not a
+        // value here. It means "whatever XCURSOR_THEME says, or this machine's default theme",
+        // which a UI has to be able to offer as its own choice rather than as an empty field.
+        // What a wlRIX install actually gets is `sgi`, from the system default config the
+        // compositor installs -- and a user file a panel writes is seeded from that.
+        kind: Kind::Str { default: None },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Cursor theme",
+        description: "An XCursor theme name -- a directory under share/icons on an XDG data \
+                      directory, or under ~/.icons. wlRIX ships sgi, the IRIX pointer set. A \
+                      theme that is not installed leaves a plain built-in arrow.",
+    },
+    Setting {
+        key: "compositor.cursor.size",
+        file: File::Compositor,
+        path: &["cursor", "size"],
+        // Also no default: absent falls through to XCURSOR_SIZE before it reaches the built-in
+        // 24. The range starts at 8 rather than 1 because a pointer smaller than that is not
+        // findable on screen, and a settings panel offering it is offering a way to lose the
+        // cursor with no obvious way back.
+        kind: Kind::Int {
+            default: None,
+            min: 8,
+            max: 512,
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Cursor size",
+        description: "Nominal, not literal: a theme carries whichever sizes its author drew and \
+                      the nearest is used. sgi has 32 and nothing else, which is what the system \
+                      default config asks for -- anything else would get the same images and \
+                      tell every client to resample them.",
     },
     Setting {
         key: "compositor.idle.blank_after_secs",
