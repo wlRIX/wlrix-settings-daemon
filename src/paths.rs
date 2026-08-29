@@ -41,6 +41,7 @@ pub enum File {
     Desktop,
     Idle,
     Portal,
+    Screenshot,
     Session,
 }
 
@@ -51,6 +52,7 @@ pub const ALL: &[File] = &[
     File::Desktop,
     File::Idle,
     File::Portal,
+    File::Screenshot,
     File::Session,
 ];
 
@@ -63,6 +65,7 @@ impl File {
             Self::Desktop => "desktop",
             Self::Idle => "idle",
             Self::Portal => "portal",
+            Self::Screenshot => "screenshot",
             Self::Session => "session",
         }
     }

@@ -55,7 +55,7 @@ pub const SETTINGS: &[Setting] = &[
         path: &["mode"],
         kind: Kind::Enum {
             // Exactly what `#[serde(rename_all = "lowercase")]` on wlrix-bg's `Mode` accepts.
-            // Its own tests assert that "tiled", "centre", "zoom" and every capitalized form are
+            // Its own tests assert that "tiled", "center", "zoom" and every capitalized form are
             // rejected, so offering one here would cost the user their whole file.
             default: Some("fill"),
             choices: &[
@@ -736,6 +736,89 @@ pub const SETTINGS: &[Setting] = &[
                       refresh rate of a tile: sources take turns, so with ten of them the \
                       default refreshes each about once a second. Lower it to make the grid \
                       livelier and the readback more expensive.",
+    },
+    // ---------------------------------------------------------------------------------------
+    // screenshot.toml -- wlrix-screenshot/src/config.rs
+    //
+    // `Reload::None` throughout, and for a different reason from the portal's: there is nothing
+    // running to tell. `wlrix-screenshot` is spawned per screenshot and reads its config each
+    // time, so a change is in effect for the next one -- which is as immediate as it gets.
+    //
+    // `[appearance] dim` is here as a float; `[save] filename` is a strftime template and is a
+    // plain string, since its validity is the C library's opinion rather than a pattern this
+    // table could state.
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "screenshot.save.dir",
+        file: File::Screenshot,
+        path: &["save", "dir"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Screenshot,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Where screenshots are saved",
+        description: "Empty means the XDG pictures directory plus Screenshots. A leading ~/ is \
+                      expanded; the directory is created when the first shot is saved.",
+    },
+    Setting {
+        key: "screenshot.save.filename",
+        file: File::Screenshot,
+        path: &["save", "filename"],
+        kind: Kind::Str {
+            default: Some("Screenshot_%Y-%m-%d_%H-%M-%S"),
+        },
+        owner: Owner::Screenshot,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Filename template",
+        description: "A strftime template, without the extension. Every conversion strftime(3) \
+                      documents works. A second shot in the same second gets -2 appended \
+                      rather than overwriting the first.",
+    },
+    Setting {
+        key: "screenshot.capture.cursor",
+        file: File::Screenshot,
+        path: &["capture", "cursor"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Screenshot,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Draw the pointer into the shot",
+        description: "Off by default: the pointer is usually somewhere incidental when the key \
+                      is pressed, and a shot of a menu is spoiled rather than explained by an \
+                      arrow in the corner of it.",
+    },
+    Setting {
+        key: "screenshot.appearance.palette",
+        file: File::Screenshot,
+        path: &["appearance", "palette"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Screenshot,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Colour scheme",
+        description: "A scheme id from wlrix-ui. Empty or unrecognized means the default, with \
+                      a line on stderr for the latter.",
+    },
+    Setting {
+        key: "screenshot.appearance.dim",
+        file: File::Screenshot,
+        path: &["appearance", "dim"],
+        kind: Kind::Float {
+            default: Some(0.55),
+            min: 0.0,
+            max: 1.0,
+        },
+        owner: Owner::Screenshot,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "How far the unselected area is darkened",
+        description: "0.0 leaves it alone, 1.0 blacks it out. The default is dark enough that \
+                      the selection reads as the subject and light enough that what is outside \
+                      it is still recognizable -- which matters, because the point of adjusting \
+                      a selection is seeing what you are about to leave out.",
     },
     // ---------------------------------------------------------------------------------------
     // session.toml -- wlrix-session/src/config.rs

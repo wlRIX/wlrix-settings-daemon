@@ -160,6 +160,11 @@ pub enum Owner {
     Desktop,
     Idle,
     Portal,
+    /// `wlrix-screenshot`. Not a daemon: it runs for as long as one screenshot takes and reads
+    /// its config each time, so there is never one to signal. It is an owner all the same,
+    /// because this enum also names *whose parser validates a candidate file* -- which is the
+    /// load-bearing half, and `Owner::None` would give up.
+    Screenshot,
     /// Nothing to tell: the value is read once, by something that is not running yet.
     None,
 }
@@ -173,6 +178,7 @@ impl Owner {
             Self::Desktop => Some("wlrix-desktop"),
             Self::Idle => Some("wlrix-idle"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
+            Self::Screenshot => Some("wlrix-screenshot"),
             Self::None => None,
         }
     }
@@ -184,13 +190,14 @@ impl Owner {
     ///
     /// The portal has none deliberately -- its own `signals.rs` explains that a screen share is
     /// not something to reconfigure underneath it, so there is nothing a signal could ask for.
+    /// `wlrix-screenshot` has none because it is not running: it is spawned per screenshot.
     pub fn pidfile(self) -> Option<&'static str> {
         match self {
             Self::Background => Some("wlrix-bg.pid"),
             Self::Compositor => Some("wlrix-compositor.pid"),
             Self::Desktop => Some("wlrix-desktop.pid"),
             Self::Idle => Some("wlrix-idle.pid"),
-            Self::Portal | Self::None => None,
+            Self::Portal | Self::Screenshot | Self::None => None,
         }
     }
 }
