@@ -245,6 +245,26 @@ pub const SETTINGS: &[Setting] = &[
                       decorations included, while a click still raises.",
     },
     Setting {
+        key: "compositor.focus.raise_on_click",
+        file: File::Compositor,
+        path: &["focus", "raise_on_click"],
+        // The compositor writes `FocusConfig::default` out by hand precisely so that this stays
+        // true for a config with no `[focus]` section at all; a default of `false` here would
+        // describe a compositor that does not exist.
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Clicking a window raises it",
+        description: "On, clicking anywhere in a window brings it to the front. Off separates \
+                      focusing from restacking: the click still gives the window the keyboard, \
+                      but the stacking order only changes deliberately -- through the window's \
+                      4Dwm frame, or Raise and Lower in its window menu. Frame clicks raise \
+                      either way.",
+    },
+    Setting {
         key: "compositor.windows.opaque_move",
         file: File::Compositor,
         path: &["windows", "opaque_move"],
@@ -798,7 +818,7 @@ pub const SETTINGS: &[Setting] = &[
         owner: Owner::Screenshot,
         reload: Reload::None,
         unit: Unit::None,
-        summary: "Colour scheme",
+        summary: "Color scheme",
         description: "A scheme id from wlrix-ui. Empty or unrecognized means the default, with \
                       a line on stderr for the latter.",
     },

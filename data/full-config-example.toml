@@ -33,6 +33,8 @@ repeat_rate = 25
 [focus]
 # Focus policy
 policy = "click"
+# Clicking a window raises it
+raise_on_click = true
 
 [windows]
 # Show window contents while moving
@@ -117,6 +119,24 @@ replace = false
 [preview]
 # Preview refresh interval
 tick_ms = 100
+
+# ---- screenshot.toml ----
+
+[save]
+# Where screenshots are saved
+# dir =    # no default; unset by default
+# Filename template
+filename = "Screenshot_%Y-%m-%d_%H-%M-%S"
+
+[capture]
+# Draw the pointer into the shot
+cursor = false
+
+[appearance]
+# Color scheme
+# palette =    # no default; unset by default
+# How far the unselected area is darkened
+dim = 0.55
 
 # ---- session.toml ----
 # Compositor to run
