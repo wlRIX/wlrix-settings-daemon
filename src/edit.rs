@@ -998,7 +998,7 @@ policy = \"pointer\"
         // that. It must cost a delay and a log line, not a wedged settings service.
         //
         // A script rather than a coreutil, because every coreutil that would hang rejects the
-        // unknown option first -- which is exactly the behaviour that makes the other three
+        // unknown option first -- which is exactly the behavior that makes the other three
         // components safe, and so cannot stand in for the one that was not.
         let dir = scratch("hangs");
         let hang = dir.join("pretends-to-be-a-compositor");

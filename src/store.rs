@@ -35,7 +35,7 @@ use crate::edit::{self, Document, Value};
 use crate::paths::{File, Roots};
 use crate::schema::{self, Kind, Setting};
 
-/// Where a value came from, so a panel can grey out a Reset that would do nothing and be
+/// Where a value came from, so a panel can gray out a Reset that would do nothing and be
 /// honest about a value it cannot change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Source {

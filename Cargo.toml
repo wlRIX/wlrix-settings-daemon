@@ -40,7 +40,7 @@ toml = "1"
 toml_edit = "0.25"
 # `fs::inotify`, for noticing that a config file was edited by hand -- which must keep working,
 # and is what the change signal is for. Already in the tree via zbus's async-io, the same reason
-# wlrix-desktop and wlrix-idle reach for it; the watch is modelled on wlrix-desktop's.
+# wlrix-desktop and wlrix-idle reach for it; the watch is modeled on wlrix-desktop's.
 rustix = { version = "1", features = ["fs", "event"] }
 # `kill(pid, SIGHUP)`, to tell an owning process that its config changed. The pidfile
 # arrangement is the compositor's and wlrix-idle's, unchanged.

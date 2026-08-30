@@ -175,14 +175,14 @@ mod tests {
     }
 
     #[test]
-    fn signalling_a_process_that_is_gone_says_the_file_is_stale() {
+    fn signaling_a_process_that_is_gone_says_the_file_is_stale() {
         // A pid that cannot be running: the maximum is well below this on Linux.
         let why = signal(0x7fff_fffe, 0).expect_err("should fail");
         assert!(why.contains("stale"), "{why}");
     }
 
     #[test]
-    fn signalling_ourselves_with_signal_zero_succeeds() {
+    fn signaling_ourselves_with_signal_zero_succeeds() {
         // Signal 0 checks for existence without delivering anything, so this proves the success
         // path without stopping the test run.
         let me = std::process::id() as i32;
@@ -238,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn a_stale_pidfile_means_not_running_rather_than_signalling_a_stranger() {
+    fn a_stale_pidfile_means_not_running_rather_than_signaling_a_stranger() {
         // pids are recycled. A crashed compositor's pidfile naming a number some unrelated
         // process has since been given is the case this is really guarding.
         let dir = scratch("stale");

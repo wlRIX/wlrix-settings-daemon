@@ -166,7 +166,7 @@ impl Settings {
 
     /// Where each value comes from: `user`, `system` or `default`.
     ///
-    /// What lets a panel grey out a Reset that would do nothing, and be honest that a value it
+    /// What lets a panel gray out a Reset that would do nothing, and be honest that a value it
     /// is showing came from `/etc/wlrix` rather than from the person using it.
     fn sources(&self, namespace: &str) -> Result<HashMap<String, String>> {
         known(namespace)?;

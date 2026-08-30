@@ -138,7 +138,7 @@ signatures blocks.
   compositor implements `wlr-output-management`, which applies live and atomically and has a test-and-rollback flow. A
   Displays panel should speak that.
 - **`[[output]]`** (background) — a different section with the same name and the same problem: a per-monitor wallpaper
-  is a picture, a mode and a colour that only mean anything together with the connector name they hang off. Unlike the
+  is a picture, a mode and a color that only mean anything together with the connector name they hang off. Unlike the
   compositor's, this one *would* apply live, so it is the first candidate for the collection surface below.
 - **`[[timeout]]`** (idle) — a countdown is several fields that only mean anything together.
 - **`[[app]]`, `[env]`** (session) — a list and a free-form map with no fixed keys to describe.
