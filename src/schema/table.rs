@@ -859,4 +859,217 @@ pub const SETTINGS: &[Setting] = &[
                       how you run a patched build for one session without touching the \
                       installed one.",
     },
+    // ---------------------------------------------------------------------------------------
+    // tray.toml -- wlrix-tray/src/config.rs
+    //
+    // `[[item]]` is absent for the usual reason: it is an array of tables keyed by an item's
+    // D-Bus `Id`, and a keyed collection needs add/remove/reorder rather than get/set.
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "tray.output",
+        file: File::Tray,
+        path: &["output"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Which monitor the tray is on",
+        description: "A connector name (DP-1, HDMI-A-1). Empty means the leftmost. A name that \
+                      is not plugged in falls back to the leftmost with a line on stderr.",
+    },
+    Setting {
+        key: "tray.anchor",
+        file: File::Tray,
+        path: &["anchor"],
+        kind: Kind::Enum {
+            default: Some("bottom-left"),
+            // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-tray's `Anchor`
+            // accepts. Its own tests assert that "bottom left" is rejected, so offering a
+            // spaced or capitalized form here would cost the user their whole file.
+            choices: &[
+                Choice {
+                    value: "bottom-left",
+                    label: "Bottom left",
+                },
+                Choice {
+                    value: "bottom-right",
+                    label: "Bottom right",
+                },
+                Choice {
+                    value: "top-left",
+                    label: "Top left",
+                },
+                Choice {
+                    value: "top-right",
+                    label: "Top right",
+                },
+            ],
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Which corner the tray docks in",
+        description: "IRIX put it bottom left, which is the default. The strip fills away from \
+                      the corner and wraps inward, so it grows onto the desktop rather than \
+                      off the screen.",
+    },
+    Setting {
+        key: "tray.orientation",
+        file: File::Tray,
+        path: &["orientation"],
+        kind: Kind::Enum {
+            default: Some("horizontal"),
+            choices: &[
+                Choice {
+                    value: "horizontal",
+                    label: "Along the screen edge",
+                },
+                Choice {
+                    value: "vertical",
+                    label: "Inward from the edge",
+                },
+            ],
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Which way the strip runs",
+        description: "Horizontal runs along the screen edge and wraps to a second row inward; \
+                      vertical runs inward and wraps to a second column sideways.",
+    },
+    Setting {
+        key: "tray.show_passive",
+        file: File::Tray,
+        path: &["show_passive"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Show items that are not asking for attention",
+        description: "The specification lets a tray hide an item whose Status is Passive, and \
+                      applications rely on it -- several park an item there permanently. On, \
+                      the strip becomes a list of everything that has ever started.",
+    },
+    Setting {
+        key: "tray.hide_when_empty",
+        file: File::Tray,
+        path: &["hide_when_empty"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Disappear when there is nothing to show",
+        description: "Off leaves an empty bevelled well on the desktop, which makes the tray \
+                      discoverable -- there is somewhere for an icon to appear.",
+    },
+    Setting {
+        key: "tray.appearance.palette",
+        file: File::Tray,
+        path: &["appearance", "palette"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Color scheme",
+        description: "A scheme id from wlrix-ui. Empty or unrecognized means the default, with \
+                      a line on stderr for the latter.",
+    },
+    Setting {
+        key: "tray.appearance.icon_theme",
+        file: File::Tray,
+        path: &["appearance", "icon_theme"],
+        kind: Kind::Str {
+            default: Some("Adwaita"),
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Icon theme an item's IconName is looked up in",
+        description: "Searched before hicolor and /usr/share/pixmaps, which between them have \
+                      almost nothing a tray wants -- fcitx5's input-keyboard-symbolic is in \
+                      every other theme and neither of those. Empty means no named theme.",
+    },
+    Setting {
+        key: "tray.metrics.icon",
+        file: File::Tray,
+        path: &["metrics", "icon"],
+        kind: Kind::Int {
+            default: Some(22),
+            min: 8,
+            max: 128,
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Icon size",
+        description: "22 is what almost every IconPixmap on the bus arrives at, so it is the \
+                      one size that needs no scaling.",
+    },
+    Setting {
+        key: "tray.metrics.cell",
+        file: File::Tray,
+        path: &["metrics", "cell"],
+        kind: Kind::Int {
+            default: Some(28),
+            min: 8,
+            max: 160,
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Cell size",
+        description: "One cell: the icon plus the room its bevel and highlight need. Floored at \
+                      the icon size rather than refused.",
+    },
+    Setting {
+        key: "tray.metrics.gap",
+        file: File::Tray,
+        path: &["metrics", "gap"],
+        kind: Kind::Int {
+            default: Some(2),
+            min: 0,
+            max: 32,
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Gap between cells",
+        description: "Zero puts the cells edge to edge, which is how a row of them reads as one \
+                      strip rather than several buttons.",
+    },
+    Setting {
+        key: "tray.metrics.margin",
+        file: File::Tray,
+        path: &["metrics", "margin"],
+        kind: Kind::Int {
+            default: Some(8),
+            min: 0,
+            max: 200,
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Distance from the screen edges",
+        description: "How far the strip sits from the two edges it is anchored to.",
+    },
+    Setting {
+        key: "tray.metrics.wrap_at",
+        file: File::Tray,
+        path: &["metrics", "wrap_at"],
+        kind: Kind::Int {
+            default: Some(8),
+            min: 1,
+            max: 64,
+        },
+        owner: Owner::Tray,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Cells per run before the strip wraps",
+        description: "Named for what it does rather than max_columns: in vertical orientation \
+                      the run is a column and the wrap makes a new one sideways.",
+    },
 ];

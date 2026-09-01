@@ -43,6 +43,7 @@ pub enum File {
     Portal,
     Screenshot,
     Session,
+    Tray,
 }
 
 /// Every file, in the order they are listed and dumped.
@@ -54,6 +55,7 @@ pub const ALL: &[File] = &[
     File::Portal,
     File::Screenshot,
     File::Session,
+    File::Tray,
 ];
 
 impl File {
@@ -67,6 +69,7 @@ impl File {
             Self::Portal => "portal",
             Self::Screenshot => "screenshot",
             Self::Session => "session",
+            Self::Tray => "tray",
         }
     }
 

@@ -141,3 +141,33 @@ dim = 0.55
 # ---- session.toml ----
 # Compositor to run
 # compositor =    # no default; unset by default
+
+# ---- tray.toml ----
+# Which monitor the tray is on
+# output =    # no default; unset by default
+# Which corner the tray docks in
+anchor = "bottom-left"
+# Which way the strip runs
+orientation = "horizontal"
+# Show items that are not asking for attention
+show_passive = false
+# Disappear when there is nothing to show
+hide_when_empty = true
+
+[appearance]
+# Color scheme
+# palette =    # no default; unset by default
+# Icon theme an item's IconName is looked up in
+icon_theme = "Adwaita"
+
+[metrics]
+# Icon size
+icon = 22
+# Cell size
+cell = 28
+# Gap between cells
+gap = 2
+# Distance from the screen edges
+margin = 8
+# Cells per run before the strip wraps
+wrap_at = 8

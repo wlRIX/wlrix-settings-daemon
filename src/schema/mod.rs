@@ -165,6 +165,7 @@ pub enum Owner {
     /// because this enum also names *whose parser validates a candidate file* -- which is the
     /// load-bearing half, and `Owner::None` would give up.
     Screenshot,
+    Tray,
     /// Nothing to tell: the value is read once, by something that is not running yet.
     None,
 }
@@ -179,6 +180,7 @@ impl Owner {
             Self::Idle => Some("wlrix-idle"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
             Self::Screenshot => Some("wlrix-screenshot"),
+            Self::Tray => Some("wlrix-tray"),
             Self::None => None,
         }
     }
@@ -197,6 +199,7 @@ impl Owner {
             Self::Compositor => Some("wlrix-compositor.pid"),
             Self::Desktop => Some("wlrix-desktop.pid"),
             Self::Idle => Some("wlrix-idle.pid"),
+            Self::Tray => Some("wlrix-tray.pid"),
             Self::Portal | Self::Screenshot | Self::None => None,
         }
     }
