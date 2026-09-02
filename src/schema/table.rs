@@ -508,6 +508,28 @@ pub const SETTINGS: &[Setting] = &[
         summary: "Margin at the screen edge",
         description: "Space between the outermost cells and the edge of the monitor.",
     },
+    // `appearance.palette` is deliberately absent while `appearance.icon_theme` is here, and the
+    // difference is not an oversight. A color scheme has to reach the compositor, the desktop
+    // and the applications at once, and this table ties a key to a *single* owner to signal --
+    // so declaring it per component would offer four switches for one setting. An icon theme is
+    // genuinely per component: the desktop draws 64-pixel launcher symbols and the tray draws
+    // 22-pixel cells, and the theme that suits one need not suit the other.
+    Setting {
+        key: "desktop.appearance.icon_theme",
+        file: File::Desktop,
+        path: &["appearance", "icon_theme"],
+        kind: Kind::Str {
+            default: Some("Adwaita"),
+        },
+        owner: Owner::Desktop,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Icon theme an Icon= name is looked up in",
+        description: "Searched before hicolor and /usr/share/pixmaps, which between them have \
+                      almost nothing a .desktop file names -- a launcher whose icon is not found \
+                      is drawn as a bare magic carpet with no symbol on it. Empty means no named \
+                      theme.",
+    },
     // ---------------------------------------------------------------------------------------
     // idle.toml -- wlrix-idle/src/config.rs
     //
@@ -963,7 +985,7 @@ pub const SETTINGS: &[Setting] = &[
         reload: Reload::Live,
         unit: Unit::None,
         summary: "Disappear when there is nothing to show",
-        description: "Off leaves an empty bevelled well on the desktop, which makes the tray \
+        description: "Off leaves an empty beveled well on the desktop, which makes the tray \
                       discoverable -- there is somewhere for an icon to appear.",
     },
     Setting {

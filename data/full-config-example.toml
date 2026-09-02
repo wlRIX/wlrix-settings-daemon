@@ -74,6 +74,10 @@ gap = 8
 # Margin at the screen edge
 margin = 12
 
+[appearance]
+# Icon theme an Icon= name is looked up in
+icon_theme = "Adwaita"
+
 # ---- idle.toml ----
 
 [lock]
