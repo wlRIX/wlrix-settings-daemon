@@ -355,6 +355,21 @@ pub const SETTINGS: &[Setting] = &[
                       client asked for is left alone by input, so once this one has fired \
                       against wlrix-idle's back, nothing switches the screens on again.",
     },
+    Setting {
+        key: "compositor.appearance.palette",
+        file: File::Compositor,
+        path: &["appearance", "palette"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Color scheme",
+        description: "A scheme id from wlrix-ui. Empty or unrecognized means the default, with \
+                      a line in the log for the latter -- a mistyped scheme name must not leave \
+                      somebody with no session at all. Normally written through the \
+                      `appearance.palette` group rather than on its own, so the chrome and the \
+                      rest of the desktop move together.",
+    },
     // `[[output]]` is deliberately not declared. Four reasons, and the README carries them in
     // full: it is a keyed collection rather than a leaf; `outputs::resolve` overlays the
     // machine-written `outputs.toml` on top of it per field, so a hand-set mode is silently
@@ -508,12 +523,27 @@ pub const SETTINGS: &[Setting] = &[
         summary: "Margin at the screen edge",
         description: "Space between the outermost cells and the edge of the monitor.",
     },
-    // `appearance.palette` is deliberately absent while `appearance.icon_theme` is here, and the
-    // difference is not an oversight. A color scheme has to reach the compositor, the desktop
-    // and the applications at once, and this table ties a key to a *single* owner to signal --
-    // so declaring it per component would offer four switches for one setting. An icon theme is
-    // genuinely per component: the desktop draws 64-pixel launcher symbols and the tray draws
-    // 22-pixel cells, and the theme that suits one need not suit the other.
+    // `appearance.palette` is declared here *and* in three other files, and is normally written
+    // through the `appearance.palette` group in `schema::group`, which fans one write out to all
+    // four and signals all four owners. This entry is what that expands to; it is still settable
+    // on its own for a session that genuinely wants one component different.
+    //
+    // `appearance.icon_theme` has no group and wants none. It is genuinely per component: the
+    // desktop draws 64-pixel launcher symbols and the tray draws 22-pixel cells, and the theme
+    // that suits one need not suit the other.
+    Setting {
+        key: "desktop.appearance.palette",
+        file: File::Desktop,
+        path: &["appearance", "palette"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Desktop,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Color scheme",
+        description: "A scheme id from wlrix-ui. Empty or unrecognized means the default, with \
+                      a line in the log for the latter -- a mistyped scheme name must not leave \
+                      the desktop unpainted.",
+    },
     Setting {
         key: "desktop.appearance.icon_theme",
         file: File::Desktop,

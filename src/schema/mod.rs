@@ -22,6 +22,14 @@
 //! is what a *UI* needs -- ranges, choices, units, prose -- plus enough structure to reject the
 //! obvious mistakes early, with a clearer message than a TOML parse error.
 //!
+//! ## One setting several files each hold a copy of
+//!
+//! A [`Setting`] names one file and one owner, which is right for almost everything. A color
+//! scheme is the exception: it has to reach the compositor, the desktop, the tray and the
+//! screenshot overlay at once, and each of those reads it out of its own file. [`group`]
+//! declares the fan-out key that writes all of them, on top of the ordinary per-component
+//! entries below. See that module for why it is not a namespace.
+//!
 //! ## What is not here, and why
 //!
 //! Array-of-table sections (`[[output]]`, `[[timeout]]`, `[[app]]`) and free-form maps
@@ -32,12 +40,14 @@
 //! has reasons beyond its shape, and a Displays panel should be speaking
 //! `wlr-output-management` instead.
 
+pub mod group;
 pub mod table;
 
 use std::fmt;
 
 use crate::paths::File;
 
+pub use group::{GROUPS, Group, group_of, lookup_group};
 pub use table::SETTINGS;
 
 /// One setting: what it is, where it lives and who has to be told when it changes.

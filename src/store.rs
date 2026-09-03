@@ -33,7 +33,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use crate::apply::{self, Outcome};
 use crate::edit::{self, Document, Value};
 use crate::paths::{File, Roots};
-use crate::schema::{self, Kind, Setting};
+use crate::schema::{self, Group, Kind, Setting};
 
 /// Where a value came from, so a panel can gray out a Reset that would do nothing and be
 /// honest about a value it cannot change.
@@ -245,7 +245,19 @@ impl Store {
     }
 
     /// The effective value of one key.
+    ///
+    /// A group key answers with its **first member's** value rather than refusing when the
+    /// members disagree. They can disagree: the four files are separate, and somebody can edit
+    /// one of them by hand. A panel showing the first member's scheme and reconciling all four
+    /// the next time Apply is pressed is the useful behavior; an error here would leave it with
+    /// nothing to select and no way to fix it. There is deliberately no "do the members agree?"
+    /// call: `Describe` hands back the member list, so a client that wants to know asks for each
+    /// of them, and the daemon grows no API for one panel's status line.
     pub fn get(&self, key: &str) -> Result<Option<Value>, Error> {
+        if let Some(group) = schema::lookup_group(key) {
+            let canonical = canonical_member(group)?;
+            return Ok(self.lock().values.get(canonical.key).cloned());
+        }
         let setting = resolve(key)?;
         Ok(self.lock().values.get(setting.key).cloned())
     }
@@ -300,11 +312,16 @@ impl Store {
     /// value leaves nothing half-applied. Across files there is no such guarantee and none is
     /// offered: two files cannot be renamed atomically, and an API that implied otherwise
     /// would be lying.
+    ///
+    /// A key naming a [`Group`] expands to its members here, before anything is resolved or
+    /// validated, so one `appearance.palette` becomes four ordinary edits in four files and
+    /// travels the rest of this path as any other batch would.
     pub fn set_many(&self, requested: &[(String, Value)]) -> Result<Changed, Error> {
         let mut wanted: Vec<(&'static Setting, Value)> = Vec::with_capacity(requested.len());
         for (key, value) in requested {
-            let setting = resolve(key)?;
-            wanted.push((setting, coerce(setting, value.clone())?));
+            for setting in expand(key)? {
+                wanted.push((setting, coerce(setting, value.clone())?));
+            }
         }
         self.commit(
             wanted
@@ -322,7 +339,11 @@ impl Store {
     pub fn reset(&self, keys: &[String]) -> Result<Changed, Error> {
         let mut wanted = Vec::with_capacity(keys.len());
         for key in keys {
-            wanted.push((resolve(key)?, None));
+            // A group resets every file it covers: leaving three of four set would put the
+            // desktop in exactly the half-changed state the group exists to prevent.
+            for setting in expand(key)? {
+                wanted.push((setting, None));
+            }
         }
         self.commit(wanted.into_iter())
     }
@@ -392,6 +413,7 @@ impl Store {
             reread(&mut inner, *file);
             changed.values.extend(difference(&before, &inner, *file));
         }
+        announce_groups(&mut changed, &inner);
 
         // One signal per owner, after every file is on disk -- so a batch spanning two of the
         // compositor's sections cannot have it read the first while the second is still a
@@ -477,10 +499,59 @@ impl Store {
             }
         }
 
+        // After the loop, not inside it: a group's members live in different files, and a
+        // single hand-edit only ever touches one of them.
+        announce_groups(&mut changed, &inner);
+
         if !changed.values.is_empty() {
             notices.push(Notice::Changed(changed));
         }
         notices
+    }
+}
+
+/// The settings a key stands for: one for an ordinary key, the members for a group.
+///
+/// A group key is not in [`SETTINGS`](schema::SETTINGS) at all, so the group table has to be
+/// consulted before `resolve` reports it unknown. The order is not a tie-break: the schema
+/// tests forbid a key being both, and forbid a member that names no setting.
+fn expand(key: &str) -> Result<Vec<&'static Setting>, Error> {
+    let Some(group) = schema::lookup_group(key) else {
+        return Ok(vec![resolve(key)?]);
+    };
+    group.members.iter().map(|member| resolve(member)).collect()
+}
+
+/// The member whose value a group reports as its own.
+fn canonical_member(group: &'static Group) -> Result<&'static Setting, Error> {
+    group
+        .members
+        .first()
+        .ok_or_else(|| Error::UnknownKey(group.key.to_owned()))
+        .and_then(|key| resolve(key))
+}
+
+/// Add each group key whose members moved, so a client watching only `appearance.palette` hears
+/// about a hand-edit of `compositor.toml`.
+///
+/// Announced with the canonical member's new value, which is the same one [`Store::get`] would
+/// answer -- so a client that reacts to the signal and a client that polls see one thing.
+fn announce_groups(changed: &mut Changed, inner: &Inner) {
+    let moved: BTreeSet<&'static str> = changed
+        .values
+        .keys()
+        .filter_map(|key| schema::group_of(key).map(|group| group.key))
+        .collect();
+    for key in moved {
+        let Some(group) = schema::lookup_group(key) else {
+            continue;
+        };
+        let Ok(canonical) = canonical_member(group) else {
+            continue;
+        };
+        if let Some(value) = inner.values.get(canonical.key) {
+            changed.values.insert(group.key, value.clone());
+        }
     }
 }
 
@@ -834,6 +905,157 @@ mod tests {
         assert_eq!(changed.outcomes.len(), 2);
         assert!(roots.user_path(File::Compositor).unwrap().is_file());
         assert!(roots.user_path(File::Idle).unwrap().is_file());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn setting_the_scheme_writes_every_file_that_draws() {
+        // The whole point of the group: one call, four files, four owners told. Before this,
+        // changing the scheme meant hand-editing up to four files and the desktop looked
+        // half-changed in between.
+        let (store, roots, dir) = scratch("group-fan-out");
+        let changed = set(&store, "appearance.palette", Value::Str("gotham".into()));
+
+        for file in [
+            File::Compositor,
+            File::Desktop,
+            File::Screenshot,
+            File::Tray,
+        ] {
+            let path = roots.user_path(file).unwrap();
+            let text = std::fs::read_to_string(&path)
+                .unwrap_or_else(|err| panic!("{}: {err}", path.display()));
+            assert!(
+                text.contains("[appearance]") && text.contains("palette = \"gotham\""),
+                "{}: {text}",
+                path.display()
+            );
+        }
+        // One outcome per owning program, not one per key.
+        assert_eq!(changed.outcomes.len(), 4, "{:?}", changed.outcomes);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_scheme_write_announces_the_group_as_well_as_the_members() {
+        // A client watching only `appearance.palette` has to hear about it, or it would have to
+        // know the member list itself -- which is the duplication the group exists to remove.
+        let (store, _, dir) = scratch("group-announce");
+        let changed = set(&store, "appearance.palette", Value::Str("gotham".into()));
+
+        assert_eq!(
+            changed.values.get("appearance.palette"),
+            Some(&Value::Str("gotham".into()))
+        );
+        assert_eq!(
+            changed.values.get("compositor.appearance.palette"),
+            Some(&Value::Str("gotham".into())),
+            "the members are still announced by name"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn hand_editing_one_file_announces_the_group_too() {
+        // The case the reverse lookup exists for: somebody edits compositor.toml in $EDITOR and
+        // the panel, which watches one key, has to notice.
+        let (store, roots, dir) = scratch("group-hand-edit");
+        set(&store, "appearance.palette", Value::Str("gotham".into()));
+
+        let path = roots.user_path(File::Compositor).unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        std::fs::write(&path, text.replace("gotham", "classic-g24")).unwrap();
+
+        let notices = store.refresh(&BTreeSet::from([File::Compositor]));
+        let announced = notices
+            .iter()
+            .find_map(|notice| match notice {
+                Notice::Changed(changed) => Some(changed),
+                _ => None,
+            })
+            .expect("the edit should be announced");
+        assert_eq!(
+            announced.values.get("appearance.palette"),
+            Some(&Value::Str("classic-g24".into()))
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_scheme_reads_back_through_the_group_key() {
+        let (store, _, dir) = scratch("group-get");
+        assert_eq!(
+            store.get("appearance.palette").unwrap(),
+            None,
+            "nothing sets a scheme on a fresh session; the components pick their own default"
+        );
+        set(&store, "appearance.palette", Value::Str("gotham".into()));
+        assert_eq!(
+            store.get("appearance.palette").unwrap(),
+            Some(Value::Str("gotham".into()))
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn one_component_can_still_be_set_on_its_own() {
+        // The members are ordinary settings. Somebody who wants the screenshot overlay dark and
+        // nothing else dark is not fighting the group; they simply do not use it.
+        let (store, roots, dir) = scratch("group-member-alone");
+        set(
+            &store,
+            "screenshot.appearance.palette",
+            Value::Str("gotham".into()),
+        );
+
+        assert!(roots.user_path(File::Screenshot).unwrap().is_file());
+        assert!(
+            !roots.user_path(File::Compositor).unwrap().exists(),
+            "setting one member must not write the others"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn resetting_the_scheme_clears_every_file() {
+        // Leaving three of four set would put the desktop in exactly the half-changed state the
+        // group exists to prevent.
+        let (store, _, dir) = scratch("group-reset");
+        set(&store, "appearance.palette", Value::Str("gotham".into()));
+        store
+            .reset(&["appearance.palette".to_owned()])
+            .expect("should reset");
+
+        for key in [
+            "compositor.appearance.palette",
+            "desktop.appearance.palette",
+            "screenshot.appearance.palette",
+            "tray.appearance.palette",
+        ] {
+            assert_eq!(
+                store.get(key).unwrap(),
+                None,
+                "{key} should be back to unset"
+            );
+        }
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_group_refuses_a_value_of_the_wrong_shape_before_writing_anything() {
+        let (store, roots, dir) = scratch("group-wrong-type");
+        let err = store
+            .set_many(&[("appearance.palette".into(), Value::Bool(true))])
+            .expect_err("should refuse");
+        assert!(matches!(err, Error::WrongType { .. }), "{err:?}");
+        assert!(!roots.user_path(File::Compositor).unwrap().exists());
 
         let _ = std::fs::remove_dir_all(&dir);
     }

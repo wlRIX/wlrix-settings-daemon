@@ -52,6 +52,10 @@ opaque_resize = true
 # Blank the screen after (deprecated)
 # blank_after_secs =    # no default; unset by default
 
+[appearance]
+# Color scheme
+# palette =    # no default; unset by default
+
 # ---- desktop.toml ----
 # Snap icons to a grid
 snap_to_grid = false
@@ -75,6 +79,8 @@ gap = 8
 margin = 12
 
 [appearance]
+# Color scheme
+# palette =    # no default; unset by default
 # Icon theme an Icon= name is looked up in
 icon_theme = "Adwaita"
 

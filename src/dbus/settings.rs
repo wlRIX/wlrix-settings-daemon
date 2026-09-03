@@ -40,7 +40,7 @@ use zbus::zvariant::{OwnedValue, Value};
 
 use crate::edit;
 use crate::paths::File;
-use crate::schema::{self, Kind, Setting};
+use crate::schema::{self, Group, Kind, Reload, Setting};
 use crate::store::{self, Changed, Store};
 
 /// The errors this interface can answer with.
@@ -110,7 +110,13 @@ impl Settings {
     }
 
     /// What one setting is: type, range, choices, unit, default, who owns it, and prose.
+    ///
+    /// Also answers for a fan-out key such as `appearance.palette`, whose description carries a
+    /// `members` list instead of an `owner` — see `Groups`.
     fn describe(&self, key: &str) -> Result<HashMap<String, OwnedValue>> {
+        if let Some(group) = schema::lookup_group(key) {
+            return Ok(describe_group(group));
+        }
         let setting = schema::lookup(key).ok_or_else(|| {
             // Route through the store so a deliberately-deferred path gets its explanation
             // rather than a bare "no such setting".
@@ -140,16 +146,23 @@ impl Settings {
     /// one — answers an empty string of its own type rather than an error. There is nothing
     /// wrong with the request; the answer is simply "nothing", and `Sources` says so properly.
     fn get(&self, key: &str) -> Result<OwnedValue> {
-        let setting = schema::lookup(key).ok_or_else(|| {
-            Error::from(
-                self.store
-                    .get(key)
-                    .expect_err("lookup failed, so the store must too"),
-            )
-        })?;
+        let kind = match schema::lookup_group(key) {
+            Some(group) => &group.kind,
+            None => {
+                &schema::lookup(key)
+                    .ok_or_else(|| {
+                        Error::from(
+                            self.store
+                                .get(key)
+                                .expect_err("lookup failed, so the store must too"),
+                        )
+                    })?
+                    .kind
+            }
+        };
         match self.store.get(key)? {
             Some(value) => Ok(to_variant(&value)),
-            None => Ok(empty_of(&setting.kind)),
+            None => Ok(empty_of(kind)),
         }
     }
 
@@ -287,14 +300,30 @@ impl Settings {
             .collect()
     }
 
+    /// What this build of the interface can do, so a client can tell an older daemon apart from
+    /// one that has simply not been asked yet.
+    ///
+    /// 2 added fan-out keys — the `Groups` property, and `Describe`/`Get`/`Set`/`Reset`
+    /// answering for one. A client that needs `appearance.palette` and finds 1 is talking to a
+    /// daemon that will answer `UnknownKey`, and should say so rather than appear to do nothing.
     #[zbus(property)]
     fn version(&self) -> u32 {
-        1
+        2
     }
 
     #[zbus(property)]
     fn namespaces(&self) -> Vec<&'static str> {
         schema::namespaces()
+    }
+
+    /// The keys that stand for the same setting in several files at once.
+    ///
+    /// Deliberately not entries in `Namespaces`: the prefix of `appearance.palette` is a
+    /// category, not a config file, so `GetAll`, `Sources` and `ResetNamespace` have nothing to
+    /// answer for it. `Describe` and `Get` do, and `Set` writes every member.
+    #[zbus(property)]
+    fn groups(&self) -> Vec<&'static str> {
+        schema::GROUPS.iter().map(|group| group.key).collect()
     }
 
     /// Settings whose effective value changed, and who caused it.
@@ -374,6 +403,58 @@ async fn announce(emitter: &SignalEmitter<'_>, changed: &Changed, origin: String
     if let Err(err) = Settings::changed(emitter, values, &origin).await {
         tracing::warn!("could not emit Changed: {err}");
     }
+}
+
+/// The metadata for one fan-out key, in the same shape as [`describe`].
+///
+/// Same keys, so a client can render one without a special case, with three differences it can
+/// notice if it wants to: `members` lists what a write expands to, `owner` and `file` are empty
+/// because there are several of each, and `reload` is the **worst** member's — a group is only
+/// as live as its least live part, and saying otherwise would have a panel report `applied`
+/// while one component still needed restarting.
+fn describe_group(group: &'static Group) -> HashMap<String, OwnedValue> {
+    let mut described = HashMap::new();
+    let mut put = |name: &str, value: OwnedValue| {
+        described.insert(name.to_owned(), value);
+    };
+
+    put("key", string(group.key));
+    put("namespace", string(category(group.key)));
+    put("signature", string(group.kind.signature()));
+    put("kind", string(group.kind.name()));
+    put("unit", string(""));
+    put("summary", string(group.summary));
+    put("description", string(group.description));
+    put("owner", string(""));
+    put("reload", string(worst_reload(group).name()));
+    put("has_default", OwnedValue::from(group.kind.has_default()));
+    put("default", empty_of(&group.kind));
+    put("file", string(""));
+    put(
+        "members",
+        list(group.members.iter().map(|key| (*key).to_owned()).collect()),
+    );
+
+    described
+}
+
+/// The part of a group key before the first dot. Not a namespace; see the `Groups` property.
+fn category(key: &str) -> &str {
+    key.split('.').next().unwrap_or(key)
+}
+
+/// The least live of a group's members, which is how live the group is.
+fn worst_reload(group: &'static Group) -> Reload {
+    group
+        .settings()
+        .map(|setting| setting.reload)
+        .max_by_key(|reload| match reload {
+            Reload::Live => 0,
+            Reload::Restart => 1,
+            Reload::NextLogin => 2,
+            Reload::None => 3,
+        })
+        .unwrap_or(Reload::None)
 }
 
 /// The metadata for one setting, as the `a{sv}` a client renders from.
@@ -611,6 +692,58 @@ mod tests {
             let variant = to_variant(&value);
             assert_eq!(from_variant(&variant), Some(value.clone()), "{value:?}");
         }
+    }
+
+    #[test]
+    fn a_group_describes_itself_in_the_same_shape_as_a_setting() {
+        // A client renders a group with the code it already has for a setting, so every key an
+        // ordinary description carries has to be here too -- with `members` on top.
+        let group = schema::lookup_group("appearance.palette").expect("the scheme is a group");
+        let described = describe_group(group);
+        let ordinary = describe(schema::lookup("compositor.focus.policy").unwrap());
+        for key in ordinary.keys() {
+            assert!(
+                described.contains_key(key) || key == "choices" || key == "choice_labels",
+                "a group description is missing {key}"
+            );
+        }
+
+        assert_eq!(described["kind"], string("string"));
+        assert_eq!(described["signature"], string("s"));
+        assert_eq!(described["namespace"], string("appearance"));
+        assert_eq!(
+            described["owner"],
+            string(""),
+            "a group has four owners, so it names none"
+        );
+        assert_eq!(described["file"], string(""));
+        assert_eq!(described["has_default"], OwnedValue::from(false));
+        assert_eq!(
+            described["members"],
+            list(vec![
+                "compositor.appearance.palette".into(),
+                "desktop.appearance.palette".into(),
+                "screenshot.appearance.palette".into(),
+                "tray.appearance.palette".into(),
+            ])
+        );
+    }
+
+    #[test]
+    fn a_group_is_only_as_live_as_its_least_live_member() {
+        // Three of the scheme's members reload on SIGHUP; wlrix-screenshot is not running to be
+        // told. Reporting `live` would have a panel say the change was applied everywhere.
+        let group = schema::lookup_group("appearance.palette").unwrap();
+        assert_eq!(worst_reload(group), Reload::None);
+        assert_eq!(describe_group(group)["reload"], string("none"));
+    }
+
+    #[test]
+    fn a_group_key_is_not_a_namespace() {
+        // `GetAll`, `Sources` and `ResetNamespace` have nothing to answer for `appearance`, and
+        // listing it would have a client ask them.
+        assert!(!schema::namespaces().contains(&"appearance"));
+        assert!(known("appearance").is_err());
     }
 
     #[test]

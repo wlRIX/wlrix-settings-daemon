@@ -52,6 +52,10 @@ portal.preview.tick_ms          ~/.config/wlrix/portal.toml       [preview] tick
 session.compositor              ~/.config/wlrix/session.toml      compositor
 ```
 
+…with one exception. `appearance.palette` is a **fan-out key**: its prefix is a category, not a file. Writing it writes
+`[appearance] palette` into `compositor.toml`, `desktop.toml`, `screenshot.toml` *and* `tray.toml`, and signals all four
+owners. See "One setting, four files" below.
+
 | Member                          | Signature                          |                                                                    |
 |---------------------------------|------------------------------------|--------------------------------------------------------------------|
 | `ListNamespaces`                | `() → as`                          | `background`, `compositor`, `desktop`, `idle`, `portal`, `session` |
@@ -62,11 +66,12 @@ session.compositor              ~/.config/wlrix/session.toml      compositor
 | `Reset` / `ResetNamespace`      | `(as) → a{ss}` / `(s) → a{ss}`     | remove keys, so they fall back to their defaults                   |
 | `Reload`                        | `() → a{ss}`                       | re-read everything from disk                                       |
 | `Invalid`                       | property `a{ss}`                   | files that will not currently parse, and why                       |
-| `Version`, `Namespaces`         | properties                         |                                                                    |
+| `Version`, `Namespaces`         | properties                         | `Version` is 2 since fan-out keys                                  |
+| `Groups`                        | property `as`                      | the fan-out keys: `appearance.palette`                             |
 | `Changed`                       | signal `(a{sv} values, s origin)`  | one per transaction, not one per key                               |
 | `FileInvalid` / `FileRecovered` | signals                            | a hand-edit broke, or fixed, a file                                |
 
-Three things are worth knowing before writing a client.
+Four things are worth knowing before writing a client.
 
 **`SetMany` is the primitive; `Set` is sugar.** One call is one write per file and one signal per owner, however many
 keys are in it — so a panel applying four keyboard fields does not make the compositor recompile its keymap four times.
@@ -82,6 +87,27 @@ so a later change to what the default means would never reach anyone who had pre
 **`origin` is how you ignore your own echo.** It carries the unique bus name of whoever called
 `Set`, or the literal `external` for a hand-edited file. Compare it against your own unique name and drop the match, or
 your panel will fight its own debounce timer.
+
+**One setting, four files.** Almost every key has one file and one owner, which is right: `[keyboard] layout` is the
+compositor's and nobody else's. A color scheme is not like that — it has to reach the compositor's window chrome, the
+desktop's icons, the tray and the screenshot overlay at once, and each of those reads it out of its own file. Declaring
+it once per component would offer four switches for one setting, and somebody who moved three of them would be left
+with a desktop that half changed.
+
+So `appearance.palette` is a **group**. `Set` on it expands to its members before anything else happens and then
+travels the ordinary path: one write per file, one signal per owner, validated through each owner's own parser first.
+`Reset` clears all four. `Get` answers the first member's value. `Describe` answers in the same shape as any other key,
+with `members` listing what it expands to and `owner`/`file` empty because there are several of each; `reload` is the
+**least live** member's, so a panel does not report `applied` while one component still needs restarting.
+
+The members are still ordinary keys. Somebody who genuinely wants the screenshot overlay dark and nothing else dark
+sets `screenshot.appearance.palette` on its own; they are not fighting the group, they simply do not use it. That also
+means the four can drift apart after a hand-edit — a client that cares reads `members` from `Describe` and asks for
+each, rather than the daemon growing a method for one panel's status line. `Changed` carries the group key alongside
+whichever members moved, including for a hand-edit, so a client can watch just the one.
+
+`appearance` is deliberately **not** in `Namespaces`. There is no `appearance.toml`, so `GetAll`, `Sources` and
+`ResetNamespace` have nothing to answer for it; `Groups` is the property that lists fan-out keys.
 
 The outcome map answers `applied` (the owner was signaled and re-read its config),
 `not-running` (written; it will be read at the next start), `restart-required`, or `next-login`. That is what lets a
