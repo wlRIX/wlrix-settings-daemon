@@ -130,6 +130,10 @@ replace = false
 # Preview refresh interval
 tick_ms = 100
 
+[appearance]
+# Color scheme
+# palette =    # no default; unset by default
+
 # ---- screenshot.toml ----
 
 [save]

@@ -198,9 +198,12 @@ mod tests {
         assert_eq!(Owner::Desktop.pidfile(), Some("wlrix-desktop.pid"));
         // Named for the binary, `wlrix-bg`, not for its config file's stem, `background`.
         assert_eq!(Owner::Background.pidfile(), Some("wlrix-bg.pid"));
-        // The portal has none deliberately: its own signals.rs says a screen share is not
-        // something to reconfigure underneath it, so there is nothing a signal could ask for.
-        assert_eq!(Owner::Portal.pidfile(), None);
+        // The portal is bus-activated, so this file appears late and may not exist at all --
+        // which `reload_via_pidfile` already reports as "not running" rather than an error.
+        assert_eq!(
+            Owner::Portal.pidfile(),
+            Some("xdg-desktop-portal-wlrix.pid")
+        );
     }
 
     #[test]

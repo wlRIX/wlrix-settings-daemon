@@ -937,16 +937,18 @@ mod tests {
     }
 
     #[test]
-    fn setting_the_scheme_writes_every_file_that_draws() {
-        // The whole point of the group: one call, four files, four owners told. Before this,
-        // changing the scheme meant hand-editing up to four files and the desktop looked
-        // half-changed in between.
+    fn setting_the_scheme_reaches_every_file_that_carries_it() {
+        // The whole point of the group: one call, five files, five owners told. Before this,
+        // changing the scheme meant hand-editing every one of them and the desktop looked
+        // half-changed in between. Four of the five draw; the portal is there because it is what
+        // tells GTK and Qt applications which scheme the session is in.
         let (store, roots, dir) = scratch("group-fan-out");
         let changed = set(&store, "appearance.palette", Value::Str("gotham".into()));
 
         for file in [
             File::Compositor,
             File::Desktop,
+            File::Portal,
             File::Screenshot,
             File::Tray,
         ] {
@@ -960,7 +962,7 @@ mod tests {
             );
         }
         // One outcome per owning program, not one per key.
-        assert_eq!(changed.outcomes.len(), 4, "{:?}", changed.outcomes);
+        assert_eq!(changed.outcomes.len(), 5, "{:?}", changed.outcomes);
 
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1062,6 +1064,7 @@ mod tests {
         for key in [
             "compositor.appearance.palette",
             "desktop.appearance.palette",
+            "portal.appearance.palette",
             "screenshot.appearance.palette",
             "tray.appearance.palette",
         ] {

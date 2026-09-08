@@ -783,10 +783,15 @@ pub const SETTINGS: &[Setting] = &[
     // ---------------------------------------------------------------------------------------
     // portal.toml -- xdg-desktop-portal-wlrix/src/config.rs
     //
-    // `Reload::None`, and deliberately so: the portal installs no reload handler, and its own
-    // signals.rs says why -- a screen share is not something to reconfigure underneath. The
-    // right action is `systemctl --user try-restart`, but only when no cast is live, which the
-    // daemon has no way to know. So it reports and leaves it to the user.
+    // `Reload::Live` throughout, since the portal gained a pidfile and a SIGHUP handler
+    // alongside its Settings interface. It had neither, on the reasoning that a screen share is
+    // not something to reconfigure underneath -- which is still true of `[preview]` and
+    // `[capture]`, and is why a reload leaves a running share alone and bites the next one.
+    //
+    // `[appearance]` is what forced the handler. This backend is where a toolkit learns whether
+    // the session is light or dark, and a toolkit asks once at startup and then listens for
+    // `SettingChanged`. With nothing to fire that on, a scheme change reached only applications
+    // started afterwards.
     //
     // `[preview] tile` is absent: it is a fixed-length pair of numbers, which none of the
     // scalar kinds describe and which a wrong-length list would turn into a parse failure.
@@ -801,13 +806,37 @@ pub const SETTINGS: &[Setting] = &[
             max: 60_000,
         },
         owner: Owner::Portal,
-        reload: Reload::None,
+        // Live in the sense that no restart is needed, not that an open picker changes under
+        // the user: the interval is read when a picker is built, so this takes effect at the
+        // next screen share.
+        reload: Reload::Live,
         unit: Unit::Milliseconds,
         summary: "Preview refresh interval",
         description: "How often one source is captured for the screen-share picker. Not the \
                       refresh rate of a tile: sources take turns, so with ten of them the \
                       default refreshes each about once a second. Lower it to make the grid \
                       livelier and the readback more expensive.",
+    },
+    Setting {
+        key: "portal.appearance.palette",
+        file: File::Portal,
+        path: &["appearance", "palette"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Portal,
+        // The signal here is load-bearing, unlike most of this table. The Settings interface
+        // re-reads the config on every call, so an application *started* after a change is told
+        // the new scheme whether or not the portal was signalled -- but a running one asked
+        // once, at startup, and hears about the change only through `SettingChanged`. The
+        // SIGHUP is what emits it.
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Color scheme",
+        description: "Which scheme the portal reports to toolkits through \
+                      org.freedesktop.impl.portal.Settings, as the dark-or-light hint and the \
+                      accent color. A scheme id from wlrix-ui; empty or unrecognized means the \
+                      default. Normally written through the `appearance.palette` group rather \
+                      than on its own, so a GTK application is told the same scheme the chrome \
+                      around it is drawn in.",
     },
     // ---------------------------------------------------------------------------------------
     // screenshot.toml -- wlrix-screenshot/src/config.rs

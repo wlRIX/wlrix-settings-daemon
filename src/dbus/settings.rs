@@ -723,6 +723,7 @@ mod tests {
             list(vec![
                 "compositor.appearance.palette".into(),
                 "desktop.appearance.palette".into(),
+                "portal.appearance.palette".into(),
                 "screenshot.appearance.palette".into(),
                 "tray.appearance.palette".into(),
             ])

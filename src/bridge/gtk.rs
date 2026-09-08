@@ -93,12 +93,12 @@ fn write_generation(
     // rather than once at install time, because it belongs to a user's config directory and
     // there is no install step that owns one.
     //
-    // Worth knowing that this only takes on a session with *no* settings portal answering. A
-    // portal overrides `settings.ini` outright -- measured: with one running GTK reported its
-    // own default `menu:close` while the file said `menu:minimize,maximize`, and with
-    // `GTK_USE_PORTAL=0` it reported the file. Until `org.freedesktop.impl.portal.Settings`
-    // exists for wlRIX, the button layout on a full session is whatever the fallback backend
-    // says. The stylesheet is written so that either layout still looks right.
+    // The layout here is a *fallback*, and worth being precise about after an earlier guess got
+    // it wrong. Measured on Wayland: GTK 3 ignores `gtk-decoration-layout` in this file
+    // entirely, keeping its own `menu:close`, and reads the Settings portal instead -- but only
+    // when `GTK_USE_PORTAL=1`, which `start-wlrix.sh` now exports. GTK 4 reads the portal
+    // either way. So the real answer is `xdg-desktop-portal-wlrix`'s Settings backend; this
+    // line is what an XWayland GTK 3 application and a session with no portal still read.
     let ini = dir.join("settings.ini");
     let existing = read_or_empty(&ini)?;
     let updated = set_ini_key(

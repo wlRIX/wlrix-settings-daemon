@@ -59,6 +59,11 @@ pub static GROUPS: &[Group] = &[Group {
     members: &[
         "compositor.appearance.palette",
         "desktop.appearance.palette",
+        // The portal does not draw anything. It is here because it is what *tells* GTK and Qt
+        // applications which scheme the session is in, through
+        // `org.freedesktop.impl.portal.Settings` -- so a toolkit picks the same light or dark as
+        // the chrome around it.
+        "portal.appearance.palette",
         "screenshot.appearance.palette",
         "tray.appearance.palette",
     ],
@@ -170,6 +175,7 @@ mod tests {
         for expected in [
             "compositor.appearance.palette",
             "desktop.appearance.palette",
+            "portal.appearance.palette",
             "screenshot.appearance.palette",
             "tray.appearance.palette",
         ] {

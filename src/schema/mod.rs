@@ -200,17 +200,22 @@ impl Owner {
     /// Kept in step by hand with each component's own `pidfile.rs`; there is no shared constant
     /// to point at, and each of those files carries a test saying so.
     ///
-    /// The portal has none deliberately -- its own `signals.rs` explains that a screen share is
-    /// not something to reconfigure underneath it, so there is nothing a signal could ask for.
     /// `wlrix-screenshot` has none because it is not running: it is spawned per screenshot.
+    ///
+    /// The portal's is the odd one out in *when* it appears. That backend is bus-activated, so
+    /// nothing has written a pidfile until something has asked it for a screen share or a
+    /// setting -- a change made before then finds no file and is reported as "not running",
+    /// which is correct and costs nothing, since the next process to start reads the new value
+    /// from disk.
     pub fn pidfile(self) -> Option<&'static str> {
         match self {
             Self::Background => Some("wlrix-bg.pid"),
             Self::Compositor => Some("wlrix-compositor.pid"),
             Self::Desktop => Some("wlrix-desktop.pid"),
             Self::Idle => Some("wlrix-idle.pid"),
+            Self::Portal => Some("xdg-desktop-portal-wlrix.pid"),
             Self::Tray => Some("wlrix-tray.pid"),
-            Self::Portal | Self::Screenshot | Self::None => None,
+            Self::Screenshot | Self::None => None,
         }
     }
 }
