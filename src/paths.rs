@@ -115,6 +115,15 @@ impl Roots {
         self.user.as_deref()
     }
 
+    /// The config directory itself, which is [`Roots::user_dir`]'s parent.
+    ///
+    /// Only a bridge wants this: everything else in the daemon writes inside `wlrix/`, and a
+    /// bridge writes into somebody else's directory beside it -- `gtk-3.0/`, for one. See
+    /// [`crate::bridge`].
+    pub fn config_home(&self) -> Option<&Path> {
+        self.user.as_deref().and_then(Path::parent)
+    }
+
     /// The system directory, watched because a change there changes the effective value of
     /// every key the user has not overridden.
     pub fn system_dir(&self) -> &Path {

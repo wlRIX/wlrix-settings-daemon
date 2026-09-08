@@ -414,6 +414,7 @@ impl Store {
             changed.values.extend(difference(&before, &inner, *file));
         }
         announce_groups(&mut changed, &inner);
+        bridge_groups(&changed, &inner);
 
         // One signal per owner, after every file is on disk -- so a batch spanning two of the
         // compositor's sections cannot have it read the first while the second is still a
@@ -502,6 +503,7 @@ impl Store {
         // After the loop, not inside it: a group's members live in different files, and a
         // single hand-edit only ever touches one of them.
         announce_groups(&mut changed, &inner);
+        bridge_groups(&changed, &inner);
 
         if !changed.values.is_empty() {
             notices.push(Notice::Changed(changed));
@@ -529,6 +531,31 @@ fn canonical_member(group: &'static Group) -> Result<&'static Setting, Error> {
         .first()
         .ok_or_else(|| Error::UnknownKey(group.key.to_owned()))
         .and_then(|key| resolve(key))
+}
+
+/// Carry a group's new value to the things that do not read wlRIX config files.
+///
+/// Called from the same two places as [`announce_groups`], and for the same reason: a scheme
+/// reaches GTK whether it was set through this daemon or hand-edited into `compositor.toml`.
+///
+/// Deliberately after the announcement rather than before. Writing somebody else's stylesheet is
+/// the slowest thing in the transaction and the least important -- a client waiting on `Changed`
+/// should not be held up behind it.
+fn bridge_groups(changed: &Changed, inner: &Inner) {
+    let Some(config_home) = inner.roots.config_home() else {
+        return;
+    };
+    for group in schema::GROUPS {
+        // Only `appearance.palette` has a bridge today. Matched on the key rather than on the
+        // group having one, because what a bridge *is* differs per group: GTK wants a scheme
+        // name, and whatever the next one wants will not be a scheme name.
+        if group.key != "appearance.palette" {
+            continue;
+        }
+        if let Some(Value::Str(scheme)) = changed.values.get(group.key) {
+            crate::bridge::gtk::apply(config_home, scheme);
+        }
+    }
 }
 
 /// Add each group key whose members moved, so a client watching only `appearance.palette` hears

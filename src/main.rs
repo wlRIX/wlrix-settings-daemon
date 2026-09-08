@@ -20,6 +20,7 @@
 //! Bus-activated, so it does nothing at all until something asks.
 
 mod apply;
+mod bridge;
 mod dbus;
 mod edit;
 mod logging;
