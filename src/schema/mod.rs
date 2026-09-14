@@ -168,6 +168,10 @@ pub enum Owner {
     Background,
     Compositor,
     Desktop,
+    /// `wlrix-files`. Several may be running at once -- it is a window, not a daemon -- but
+    /// only one holds the bus name and only that one writes a pidfile, and it is the one that
+    /// tells the others. See `Wlrix.Files`' own instance guard.
+    Files,
     Idle,
     Portal,
     /// `wlrix-screenshot`. Not a daemon: it runs for as long as one screenshot takes and reads
@@ -187,6 +191,7 @@ impl Owner {
             Self::Background => Some("wlrix-bg"),
             Self::Compositor => Some("wlrix-compositor"),
             Self::Desktop => Some("wlrix-desktop"),
+            Self::Files => Some("wlrix-files"),
             Self::Idle => Some("wlrix-idle"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
             Self::Screenshot => Some("wlrix-screenshot"),
@@ -212,6 +217,7 @@ impl Owner {
             Self::Background => Some("wlrix-bg.pid"),
             Self::Compositor => Some("wlrix-compositor.pid"),
             Self::Desktop => Some("wlrix-desktop.pid"),
+            Self::Files => Some("wlrix-files.pid"),
             Self::Idle => Some("wlrix-idle.pid"),
             Self::Portal => Some("xdg-desktop-portal-wlrix.pid"),
             Self::Tray => Some("wlrix-tray.pid"),

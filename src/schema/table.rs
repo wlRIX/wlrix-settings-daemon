@@ -561,6 +561,63 @@ pub const SETTINGS: &[Setting] = &[
                       theme.",
     },
     // ---------------------------------------------------------------------------------------
+    // files.toml -- wlrix-apps/src/Wlrix.Files/Services/FilesConfig.cs
+    //
+    // The file manager keeps most of what it remembers in its own JSON under
+    // $XDG_DATA_HOME/wlrix/files: which directory each tab was showing, how wide the sidebar
+    // was, which columns were how wide. None of that is configuration -- it is where the
+    // windows were when they closed, and a settings panel has no business offering it.
+    //
+    // These two are different, and are here because somebody would look for them in a settings
+    // panel: how opening a folder behaves, and which icon theme the listing draws from. The
+    // second is per component for the same reason the desktop's and the tray's are -- the
+    // listing draws 48-pixel previews where the tray draws 22-pixel cells.
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "files.navigation.mode",
+        file: File::Files,
+        path: &["navigation", "mode"],
+        kind: Kind::Enum {
+            default: Some("modern"),
+            // Exactly what the C# enum parses, which is case-insensitive but not
+            // punctuation-insensitive.
+            choices: &[
+                Choice {
+                    value: "modern",
+                    label: "Navigate in place",
+                },
+                Choice {
+                    value: "classic",
+                    label: "A window per directory",
+                },
+            ],
+        },
+        owner: Owner::Files,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "What opening a folder does",
+        description: "Classic is the IRIX behavior: every folder gets its own window, and \
+                      opening one that is already open raises it instead of opening a second. \
+                      Modern navigates the window you are in. Either way Control opens a tab \
+                      and Shift opens a window.",
+    },
+    Setting {
+        key: "files.appearance.icon_theme",
+        file: File::Files,
+        path: &["appearance", "icon_theme"],
+        kind: Kind::Str {
+            default: Some("Adwaita"),
+        },
+        owner: Owner::Files,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Icon theme the listing draws from",
+        description: "Searched before hicolor and /usr/share/pixmaps. A type with no icon in \
+                      the theme falls back to the generic one for its media type, so a wrong \
+                      name here costs detail rather than leaving the listing blank. Empty means \
+                      no named theme.",
+    },
+    // ---------------------------------------------------------------------------------------
     // idle.toml -- wlrix-idle/src/config.rs
     //
     // `[[timeout]]` is absent for the same reason as `[[output]]`: it is a collection, and one
