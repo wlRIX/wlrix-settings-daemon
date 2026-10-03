@@ -938,9 +938,9 @@ mod tests {
 
     #[test]
     fn setting_the_scheme_reaches_every_file_that_carries_it() {
-        // The whole point of the group: one call, five files, five owners told. Before this,
+        // The whole point of the group: one call, six files, six owners told. Before this,
         // changing the scheme meant hand-editing every one of them and the desktop looked
-        // half-changed in between. Four of the five draw; the portal is there because it is what
+        // half-changed in between. Five of the six draw; the portal is there because it is what
         // tells GTK and Qt applications which scheme the session is in.
         let (store, roots, dir) = scratch("group-fan-out");
         let changed = set(&store, "appearance.palette", Value::Str("gotham".into()));
@@ -948,6 +948,7 @@ mod tests {
         for file in [
             File::Compositor,
             File::Desktop,
+            File::Lock,
             File::Portal,
             File::Screenshot,
             File::Tray,
@@ -962,7 +963,7 @@ mod tests {
             );
         }
         // One outcome per owning program, not one per key.
-        assert_eq!(changed.outcomes.len(), 5, "{:?}", changed.outcomes);
+        assert_eq!(changed.outcomes.len(), 6, "{:?}", changed.outcomes);
 
         let _ = std::fs::remove_dir_all(&dir);
     }

@@ -16,6 +16,8 @@
 //!   `systemctl --user try-restart`, but only when no cast is live, and the daemon has no way
 //!   to know that. So it reports and leaves the decision to the person.
 //! - **`wlrix-session`**: reads its config before there is a session. Next login.
+//! - **`wlrix-screenshot`**, **`wlrix-lock`**: not running between uses, and read their config
+//!   each time they start. Reported as not running, which is the truth and needs no action.
 //!
 //! What comes back is an [`Outcome`] per owner rather than a bare success, so a settings panel
 //! can say "the compositor is not running; this applies at next login" instead of appearing to
@@ -64,7 +66,12 @@ impl Outcome {
 pub fn notify(owner: Owner, reload: Reload) -> Outcome {
     match reload {
         Reload::NextLogin => Outcome::NextLogin,
-        Reload::None | Reload::Restart => Outcome::RestartRequired,
+        // Nothing running reads it, so there is nothing to restart either: the owner reads the
+        // file fresh each time it starts -- the next screenshot, the next lock. That is exactly
+        // what `NotRunning` says, and `RestartRequired` would send someone looking for a process
+        // to restart that does not exist.
+        Reload::None => Outcome::NotRunning,
+        Reload::Restart => Outcome::RestartRequired,
         Reload::Live => signal_owner(owner),
     }
 }
@@ -211,10 +218,8 @@ mod tests {
         // No pidfile is read and no signal is sent for these, so they answer the same whether
         // or not anything is running.
         assert_eq!(notify(Owner::None, Reload::NextLogin), Outcome::NextLogin);
-        assert_eq!(
-            notify(Owner::Portal, Reload::None),
-            Outcome::RestartRequired
-        );
+        assert_eq!(notify(Owner::Lock, Reload::None), Outcome::NotRunning);
+        assert_eq!(notify(Owner::Screenshot, Reload::None), Outcome::NotRunning);
         assert_eq!(
             notify(Owner::Idle, Reload::Restart),
             Outcome::RestartRequired

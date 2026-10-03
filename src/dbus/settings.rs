@@ -714,7 +714,7 @@ mod tests {
         assert_eq!(
             described["owner"],
             string(""),
-            "a group has four owners, so it names none"
+            "a group has several owners, so it names none"
         );
         assert_eq!(described["file"], string(""));
         assert_eq!(described["has_default"], OwnedValue::from(false));
@@ -723,6 +723,7 @@ mod tests {
             list(vec![
                 "compositor.appearance.palette".into(),
                 "desktop.appearance.palette".into(),
+                "lock.appearance.palette".into(),
                 "portal.appearance.palette".into(),
                 "screenshot.appearance.palette".into(),
                 "tray.appearance.palette".into(),

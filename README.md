@@ -47,18 +47,19 @@ background.mode                 ~/.config/wlrix/background.toml   mode
 compositor.keyboard.layout      ~/.config/wlrix/compositor.toml   [keyboard] layout
 compositor.focus.policy         ~/.config/wlrix/compositor.toml   [focus] policy
 idle.lock.command               ~/.config/wlrix/idle.toml         [lock] command
+lock.background.mode            ~/.config/wlrix/lock.toml         [background] mode
 desktop.metrics.icon            ~/.config/wlrix/desktop.toml      [metrics] icon
 portal.preview.tick_ms          ~/.config/wlrix/portal.toml       [preview] tick_ms
 session.compositor              ~/.config/wlrix/session.toml      compositor
 ```
 
 …with one exception. `appearance.palette` is a **fan-out key**: its prefix is a category, not a file. Writing it writes
-`[appearance] palette` into `compositor.toml`, `desktop.toml`, `screenshot.toml` *and* `tray.toml`, and signals all four
-owners. See "One setting, four files" below.
+`[appearance] palette` into `compositor.toml`, `desktop.toml`, `lock.toml`, `portal.toml`, `screenshot.toml` *and*
+`tray.toml`, and tells every owner. See "One setting, several files" below.
 
 | Member                          | Signature                          |                                                                    |
 |---------------------------------|------------------------------------|--------------------------------------------------------------------|
-| `ListNamespaces`                | `() → as`                          | `background`, `compositor`, `desktop`, `idle`, `portal`, `session` |
+| `ListNamespaces`                | `() → as`                          | one per config file: `background`, `compositor`, … `lock`, `tray`  |
 | `Describe` / `DescribeAll`      | `(s) → a{sv}` / `(s) → a{sa{sv}}`  | the schema for one key / a whole panel in one round trip           |
 | `Get` / `GetAll`                | `(s) → v` / `(s) → a{sv}`          | the effective value: the file's, else the declared default         |
 | `Sources`                       | `(s) → a{ss}`                      | key → `user` \| `system` \| `default`                              |
@@ -88,21 +89,21 @@ so a later change to what the default means would never reach anyone who had pre
 `Set`, or the literal `external` for a hand-edited file. Compare it against your own unique name and drop the match, or
 your panel will fight its own debounce timer.
 
-**One setting, four files.** Almost every key has one file and one owner, which is right: `[keyboard] layout` is the
+**One setting, several files.** Almost every key has one file and one owner, which is right: `[keyboard] layout` is the
 compositor's and nobody else's. A color scheme is not like that — it has to reach the compositor's window chrome, the
-desktop's icons, the tray and the screenshot overlay at once, and each of those reads it out of its own file. Declaring
+desktop's icons, the lock screen, the tray and the screenshot overlay at once, and each of those reads it out of its own file. Declaring
 it once per component would offer four switches for one setting, and somebody who moved three of them would be left
 with a desktop that half changed.
 
 So `appearance.palette` is a **group**. `Set` on it expands to its members before anything else happens and then
 travels the ordinary path: one write per file, one signal per owner, validated through each owner's own parser first.
-`Reset` clears all four. `Get` answers the first member's value. `Describe` answers in the same shape as any other key,
+`Reset` clears every member. `Get` answers the first member's value. `Describe` answers in the same shape as any other key,
 with `members` listing what it expands to and `owner`/`file` empty because there are several of each; `reload` is the
 **least live** member's, so a panel does not report `applied` while one component still needs restarting.
 
 The members are still ordinary keys. Somebody who genuinely wants the screenshot overlay dark and nothing else dark
 sets `screenshot.appearance.palette` on its own; they are not fighting the group, they simply do not use it. That also
-means the four can drift apart after a hand-edit — a client that cares reads `members` from `Describe` and asks for
+means the members can drift apart after a hand-edit — a client that cares reads `members` from `Describe` and asks for
 each, rather than the daemon growing a method for one panel's status line. `Changed` carries the group key alongside
 whichever members moved, including for a hand-edit, so a client can watch just the one.
 
@@ -110,7 +111,8 @@ whichever members moved, including for a hand-edit, so a client can watch just t
 `ResetNamespace` have nothing to answer for it; `Groups` is the property that lists fan-out keys.
 
 The outcome map answers `applied` (the owner was signaled and re-read its config),
-`not-running` (written; it will be read at the next start), `restart-required`, or `next-login`. That is what lets a
+`not-running` (written; it will be read at the next start), `restart-required`, or `next-login`. `wlrix-screenshot` and
+`wlrix-lock` always answer `not-running`: neither is running between uses, and each reads its file when it starts. That is what lets a
 panel say *"the compositor isn't running; this applies at next login"*
 instead of appearing to have done nothing.
 
@@ -166,6 +168,8 @@ signatures blocks.
 - **`[[output]]`** (background) — a different section with the same name and the same problem: a per-monitor wallpaper
   is a picture, a mode and a color that only mean anything together with the connector name they hang off. Unlike the
   compositor's, this one *would* apply live, so it is the first candidate for the collection surface below.
+- **`[[background.output]]`** (lock) — the lock screen's per-monitor wallpapers, for the same reason as the
+  background's `[[output]]`. Not live either way: `wlrix-lock` reads its file only when it locks.
 - **`[[timeout]]`** (idle) — a countdown is several fields that only mean anything together.
 - **`[[app]]`, `[env]`** (session) — a list and a free-form map with no fixed keys to describe.
 - **`[preview] tile`** (portal) — a fixed-length pair of numbers, which none of the value shapes here describes.

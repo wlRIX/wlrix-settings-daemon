@@ -173,6 +173,10 @@ pub enum Owner {
     /// tells the others. See `Wlrix.Files`' own instance guard.
     Files,
     Idle,
+    /// `wlrix-lock`. Like the screenshot overlay, not a daemon: it runs while the session is
+    /// locked and reads its config each time it starts, with no reload on purpose. An owner for
+    /// the same reason -- its parser is what validates a candidate `lock.toml`.
+    Lock,
     Portal,
     /// `wlrix-screenshot`. Not a daemon: it runs for as long as one screenshot takes and reads
     /// its config each time, so there is never one to signal. It is an owner all the same,
@@ -193,6 +197,7 @@ impl Owner {
             Self::Desktop => Some("wlrix-desktop"),
             Self::Files => Some("wlrix-files"),
             Self::Idle => Some("wlrix-idle"),
+            Self::Lock => Some("wlrix-lock"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
             Self::Screenshot => Some("wlrix-screenshot"),
             Self::Tray => Some("wlrix-tray"),
@@ -206,6 +211,7 @@ impl Owner {
     /// to point at, and each of those files carries a test saying so.
     ///
     /// `wlrix-screenshot` has none because it is not running: it is spawned per screenshot.
+    /// `wlrix-lock` has none because there is nothing to tell it: it never reloads.
     ///
     /// The portal's is the odd one out in *when* it appears. That backend is bus-activated, so
     /// nothing has written a pidfile until something has asked it for a screen share or a
@@ -221,7 +227,7 @@ impl Owner {
             Self::Idle => Some("wlrix-idle.pid"),
             Self::Portal => Some("xdg-desktop-portal-wlrix.pid"),
             Self::Tray => Some("wlrix-tray.pid"),
-            Self::Screenshot | Self::None => None,
+            Self::Lock | Self::Screenshot | Self::None => None,
         }
     }
 }

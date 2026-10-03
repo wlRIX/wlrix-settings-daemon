@@ -20,6 +20,39 @@ use crate::paths::File;
 /// `wlrix-idle`'s longest countdown, borrowed as the bound on the compositor's blank timer too.
 const A_DAY: i64 = 86_400;
 
+/// How a wallpaper is fitted, for both `background.mode` and `lock.background.mode`.
+///
+/// Exactly what `#[serde(rename_all = "lowercase")]` on wlrix-bg's `Mode` accepts. One list for
+/// both because `wlrix-lock` does not have a copy of that enum: its `[background]` section *is*
+/// wlrix-bg's `Config`, decoded by wlrix-bg's own types, so the two keys cannot accept different
+/// values and declaring them separately would only invite the lists to drift apart.
+const WALLPAPER_MODES: &[Choice] = &[
+    Choice {
+        value: "fill",
+        label: "Fill the screen",
+    },
+    Choice {
+        value: "fit",
+        label: "Fit inside the screen",
+    },
+    Choice {
+        value: "stretch",
+        label: "Stretch to the screen",
+    },
+    Choice {
+        value: "center",
+        label: "Center at full size",
+    },
+    Choice {
+        value: "tile",
+        label: "Tile",
+    },
+    Choice {
+        value: "solid",
+        label: "Color only",
+    },
+];
+
 pub const SETTINGS: &[Setting] = &[
     // ---------------------------------------------------------------------------------------
     // background.toml -- wlrix-bg/src/config.rs
@@ -58,32 +91,7 @@ pub const SETTINGS: &[Setting] = &[
             // Its own tests assert that "tiled", "center", "zoom" and every capitalized form are
             // rejected, so offering one here would cost the user their whole file.
             default: Some("fill"),
-            choices: &[
-                Choice {
-                    value: "fill",
-                    label: "Fill the screen",
-                },
-                Choice {
-                    value: "fit",
-                    label: "Fit inside the screen",
-                },
-                Choice {
-                    value: "stretch",
-                    label: "Stretch to the screen",
-                },
-                Choice {
-                    value: "center",
-                    label: "Center at full size",
-                },
-                Choice {
-                    value: "tile",
-                    label: "Tile",
-                },
-                Choice {
-                    value: "solid",
-                    label: "Color only",
-                },
-            ],
+            choices: WALLPAPER_MODES,
         },
         owner: Owner::Background,
         reload: Reload::Live,
@@ -633,9 +641,12 @@ pub const SETTINGS: &[Setting] = &[
         reload: Reload::Live,
         unit: Unit::None,
         summary: "Screen locker",
-        description: "The locker to run, e.g. \"swaylock -f -c 000000\". Nothing by default: \
-                      which locker a session uses is a choice, and guessing at one that is not \
-                      installed would turn every lock into a silent no-op.",
+        description: "The locker to run, e.g. \"wlrix-lock\". It must keep running until the \
+                      session is unlocked -- wlrix-idle starts it only when it is not already \
+                      running, so a locker that forks into the background (swaylock -f) is \
+                      started again on every timeout. Nothing by default: which locker a session \
+                      uses is a choice, and guessing at one that is not installed would turn \
+                      every lock into a silent no-op.",
     },
     Setting {
         key: "idle.before_sleep.lock",
@@ -836,6 +847,128 @@ pub const SETTINGS: &[Setting] = &[
         description: "For running wlrix-idle inside another desktop, which already owns them. \
                       Taking a live KDE session's inhibit handling away breaks it, so this is \
                       off unless asked for.",
+    },
+    // ---------------------------------------------------------------------------------------
+    // lock.toml -- wlrix-lock/src/config.rs
+    //
+    // `Reload::None` throughout, for the screenshot overlay's reason: there is nothing running to
+    // tell. `wlrix-lock` reads its file each time it locks and deliberately has no reload -- a
+    // lock screen should not change under the person typing into it -- so a change is in effect
+    // at the next lock.
+    //
+    // `[background]` is not wlrix-lock's own schema. It is `wlrix_bg::config::Config`, decoded by
+    // wlrix-bg's types, so these three keys mirror `background.*` above key for key, default for
+    // default, and the mode list is the same constant. `[[background.output]]` is absent for the
+    // same reason `[[output]]` is there.
+    //
+    // `blur` is first because it is the one top-level key: TOML puts every bare key before the
+    // first table, and `--dump-schema`'s output has to be a file wlrix-lock accepts.
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "lock.blur",
+        file: File::Lock,
+        path: &["blur"],
+        // wlrix-lock clamps anything larger to its `MAX_BLUR`, 200; refusing it here is the
+        // clearer message.
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 200,
+        },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::Pixels,
+        summary: "Blur behind the lock screen",
+        description: "How far the wallpaper is blurred behind the clock and the password field, \
+                      in pixels. Zero leaves it exactly as the desktop background draws it.",
+    },
+    Setting {
+        key: "lock.appearance.palette",
+        file: File::Lock,
+        path: &["appearance", "palette"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Color scheme",
+        description: "A scheme id from wlrix-ui, for the password field and the unlock button. \
+                      Empty or unrecognized means the default, with a line on stderr for the \
+                      latter.",
+    },
+    Setting {
+        key: "lock.clock.time_format",
+        file: File::Lock,
+        path: &["clock", "time_format"],
+        kind: Kind::Str {
+            default: Some("%H:%M"),
+        },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Clock format",
+        description: "A strftime template for the large clock, in the session's LC_TIME. Empty \
+                      means the default, 24-hour hours and minutes; \"%I:%M %p\" is the 12-hour \
+                      form.",
+    },
+    Setting {
+        key: "lock.clock.date_format",
+        file: File::Lock,
+        path: &["clock", "date_format"],
+        // No default: absent means the locale's long date, whose order wlrix-lock picks per
+        // language. That is not a template this table could write down.
+        kind: Kind::Str { default: None },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Date format",
+        description: "A strftime template for the date under the clock. Empty means the \
+                      locale's long date -- \"Friday, September 18, 2026\", or \
+                      \"2026年9月18日金曜日\" in Japanese -- with the names in the session's \
+                      language.",
+    },
+    Setting {
+        key: "lock.background.image",
+        file: File::Lock,
+        path: &["background", "image"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Lock screen wallpaper",
+        description: "The picture behind the lock screen, as an absolute path, in any format the \
+                      desktop background reads -- SGI and XPM included. Empty shows the color \
+                      alone. Independent of the desktop's wallpaper.",
+    },
+    Setting {
+        key: "lock.background.mode",
+        file: File::Lock,
+        path: &["background", "mode"],
+        kind: Kind::Enum {
+            default: Some("fill"),
+            choices: WALLPAPER_MODES,
+        },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "How the lock screen wallpaper is fitted",
+        description: "The same choices as the desktop background: fill crops, fit letterboxes, \
+                      stretch distorts, center and tile draw it at its own size, solid ignores \
+                      the picture.",
+    },
+    Setting {
+        key: "lock.background.color",
+        file: File::Lock,
+        path: &["background", "color"],
+        kind: Kind::Str {
+            default: Some("#555555"),
+        },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Lock screen color",
+        description: "The color behind the picture, as \"#rrggbb\". Seen in the letterbox bars, \
+                      through anything transparent, and over the whole screen when there is no \
+                      picture or the mode is solid.",
     },
     // ---------------------------------------------------------------------------------------
     // portal.toml -- xdg-desktop-portal-wlrix/src/config.rs
