@@ -44,6 +44,21 @@
 //! Whether a scheme is dark comes from `wlrix_ui::palette::resolve`, the call the portal answers
 //! `color-scheme` from, so the two always agree.
 //!
+//! ## And the icon theme, once
+//!
+//! `gtk-icon-theme-name=wlrix`, so a GTK application draws the same folders and file types as
+//! wlRIX Files and the desktop. Unlike the two keys above it is **only ever added, never
+//! replaced**: an icon theme is a taste rather than something the scheme decides, and a user who
+//! has named one -- here or by hand -- keeps it. It is skipped when the theme is not installed,
+//! because GTK told to use a missing theme falls back to hicolor and loses the Adwaita icons it
+//! would otherwise have had.
+//!
+//! This is the **fallback**, the way the decoration layout above is. Under a wlRIX session GTK
+//! takes the icon theme from the Settings portal, which overrides this file: the wlRIX backend
+//! answers `icon-theme` itself (`portal.appearance.icon_theme`), and when it did not, the GTK
+//! backend answered from gsettings and this line was never read. It matters to a GTK process
+//! that is not asking a portal -- GTK 3 without `GTK_USE_PORTAL=1`, or a session with none.
+//!
 //! `gtk-theme-name` is deliberately **not** set. libadwaita ignores it, and `share/themes/wlRIX`
 //! is a stylesheet directory rather than a complete GTK theme -- the widgets keep Adwaita's
 //! shape and only take wlRIX's colors. Claiming the name would promise a theme that is not
@@ -68,6 +83,10 @@ const END: &str = "/* <<< wlRIX */";
 /// opens. `wlrix-compositor`'s own frame has exactly these three.
 const DECORATION_LAYOUT: &str = "menu:minimize,maximize";
 
+/// The icon theme a GTK application is pointed at, when the user has not named one: the IRIX set
+/// `wlrix-assets` installs, which every wlRIX component also defaults to.
+const ICON_THEME: &str = "wlrix";
+
 /// The GTK generations to write for.
 const GENERATIONS: &[&str] = &["gtk-3.0", "gtk-4.0"];
 
@@ -77,6 +96,9 @@ const GENERATIONS: &[&str] = &["gtk-3.0", "gtk-4.0"];
 /// a GTK stylesheet that could not be updated is worth a log line rather than a failed `Set`.
 /// The caller has already committed.
 pub fn apply(config_home: &Path, scheme: &str) {
+    // Empty or unknown means the default scheme, exactly as it does in every component -- and
+    // there is no `schemes/.css` to import.
+    let scheme = wlrix_ui::palette::resolve(Some(scheme)).0.id;
     let Some(theme) = theme_root() else {
         tracing::debug!(
             "no wlRIX GTK stylesheets on XDG_DATA_DIRS; not pointing GTK at {scheme}. \
@@ -85,9 +107,10 @@ pub fn apply(config_home: &Path, scheme: &str) {
         return;
     };
 
+    let icons = icon_theme_installed().then_some(ICON_THEME);
     for generation in GENERATIONS {
         let dir = config_home.join(generation);
-        if let Err(err) = write_generation(&dir, &theme, generation, scheme) {
+        if let Err(err) = write_generation(&dir, &theme, generation, scheme, icons) {
             tracing::warn!("could not point {generation} at {scheme}: {err}");
         }
     }
@@ -99,6 +122,7 @@ fn write_generation(
     theme: &Path,
     generation: &str,
     scheme: &str,
+    icon_theme: Option<&str>,
 ) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
 
@@ -132,6 +156,13 @@ fn write_generation(
         "gtk-application-prefer-dark-theme",
         prefer_dark(scheme),
     );
+    // Added only where there is none. See the module notes.
+    let updated = match icon_theme {
+        Some(icons) if !has_ini_key(&updated, "Settings", "gtk-icon-theme-name") => {
+            set_ini_key(&updated, "Settings", "gtk-icon-theme-name", icons)
+        }
+        _ => updated,
+    };
     write_if_changed(&ini, &existing, &updated)
 }
 
@@ -283,6 +314,36 @@ fn set_ini_key(existing: &str, section: &str, key: &str, value: &str) -> String 
     let mut text = out.join("\n");
     text.push('\n');
     text
+}
+
+/// Whether `[section]` already has `key`, by the same reading of the file [`set_ini_key`] uses: a
+/// commented-out key is a comment, not a value.
+fn has_ini_key(existing: &str, section: &str, key: &str) -> bool {
+    let header = format!("[{section}]");
+    let mut in_section = false;
+    for text in existing.lines() {
+        let trimmed = text.trim();
+        if trimmed.starts_with('[') && trimmed.ends_with(']') {
+            in_section = trimmed == header;
+        } else if in_section
+            && trimmed
+                .split_once('=')
+                .is_some_and(|(name, _)| name.trim() == key)
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// Whether [`ICON_THEME`] is installed where GTK would look for it.
+fn icon_theme_installed() -> bool {
+    data_dirs().into_iter().any(|dir| {
+        dir.join("icons")
+            .join(ICON_THEME)
+            .join("index.theme")
+            .is_file()
+    })
 }
 
 /// The installed stylesheet directory, found the way GTK finds a theme: by name, on the XDG data
@@ -481,6 +542,7 @@ mod tests {
             Path::new("/usr/share/themes/wlRIX"),
             "gtk-4.0",
             "classic",
+            Some(ICON_THEME),
         )
         .expect("written");
         let ini = std::fs::read_to_string(dir.join("settings.ini")).expect("read back");
@@ -499,6 +561,74 @@ mod tests {
             ini.contains(&format!("gtk-decoration-layout={DECORATION_LAYOUT}")),
             "{ini}"
         );
+    }
+
+    #[test]
+    fn the_icon_theme_is_added_where_there_is_none() {
+        let root = std::env::temp_dir().join(format!("wlrix-gtk-icons-{}", std::process::id()));
+        let dir = root.join("gtk-3.0");
+        std::fs::create_dir_all(&dir).expect("temp dir");
+
+        let theme = Path::new("/usr/share/themes/wlRIX");
+        write_generation(&dir, theme, "gtk-3.0", "classic", Some(ICON_THEME)).expect("written");
+        let ini = std::fs::read_to_string(dir.join("settings.ini")).expect("read back");
+        let _ = std::fs::remove_dir_all(&root);
+
+        assert!(
+            ini.contains(&format!("gtk-icon-theme-name={ICON_THEME}")),
+            "{ini}"
+        );
+    }
+
+    #[test]
+    fn an_icon_theme_somebody_chose_is_kept() {
+        let root = std::env::temp_dir().join(format!("wlrix-gtk-chosen-{}", std::process::id()));
+        let dir = root.join("gtk-3.0");
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        std::fs::write(
+            dir.join("settings.ini"),
+            "[Settings]\ngtk-icon-theme-name=Papirus\n",
+        )
+        .expect("seed");
+
+        let theme = Path::new("/usr/share/themes/wlRIX");
+        write_generation(&dir, theme, "gtk-3.0", "classic", Some(ICON_THEME)).expect("written");
+        let ini = std::fs::read_to_string(dir.join("settings.ini")).expect("read back");
+        let _ = std::fs::remove_dir_all(&root);
+
+        assert!(ini.contains("gtk-icon-theme-name=Papirus"), "{ini}");
+        assert_eq!(ini.matches("gtk-icon-theme-name").count(), 1, "{ini}");
+    }
+
+    #[test]
+    fn no_icon_theme_is_named_when_it_is_not_installed() {
+        // GTK told to use a theme that is not there loses Adwaita's icons for hicolor's.
+        let root = std::env::temp_dir().join(format!("wlrix-gtk-absent-{}", std::process::id()));
+        let dir = root.join("gtk-4.0");
+        std::fs::create_dir_all(&dir).expect("temp dir");
+
+        let theme = Path::new("/usr/share/themes/wlRIX");
+        write_generation(&dir, theme, "gtk-4.0", "classic", None).expect("written");
+        let ini = std::fs::read_to_string(dir.join("settings.ini")).expect("read back");
+        let _ = std::fs::remove_dir_all(&root);
+
+        assert!(!ini.contains("gtk-icon-theme-name"), "{ini}");
+    }
+
+    #[test]
+    fn a_commented_out_icon_theme_is_not_a_choice() {
+        let theirs = "[Settings]\n# gtk-icon-theme-name=Papirus\n";
+        assert!(!has_ini_key(theirs, "Settings", "gtk-icon-theme-name"));
+        assert!(has_ini_key(
+            "[Settings]\ngtk-icon-theme-name = Papirus\n",
+            "Settings",
+            "gtk-icon-theme-name"
+        ));
+        assert!(!has_ini_key(
+            "[Other]\ngtk-icon-theme-name=Papirus\n",
+            "Settings",
+            "gtk-icon-theme-name"
+        ));
     }
 
     #[test]

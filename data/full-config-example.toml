@@ -82,7 +82,17 @@ margin = 12
 # Color scheme
 # palette =    # no default; unset by default
 # Icon theme an Icon= name is looked up in
-icon_theme = "Adwaita"
+icon_theme = "wlrix"
+
+# ---- files.toml ----
+
+[navigation]
+# What opening a folder does
+mode = "modern"
+
+[appearance]
+# Icon theme the listing draws from
+icon_theme = "wlrix"
 
 # ---- idle.toml ----
 
@@ -124,6 +134,28 @@ logind = true
 # Take the bus names from whoever holds them
 replace = false
 
+# ---- lock.toml ----
+# Blur behind the lock screen
+blur = 0
+
+[appearance]
+# Color scheme
+# palette =    # no default; unset by default
+
+[clock]
+# Clock format
+time_format = "%H:%M"
+# Date format
+# date_format =    # no default; unset by default
+
+[background]
+# Lock screen wallpaper
+# image =    # no default; unset by default
+# How the lock screen wallpaper is fitted
+mode = "fill"
+# Lock screen color
+color = "#555555"
+
 # ---- portal.toml ----
 
 [preview]
@@ -133,6 +165,8 @@ tick_ms = 100
 [appearance]
 # Color scheme
 # palette =    # no default; unset by default
+# Icon theme toolkits are told to use
+icon_theme = "wlrix"
 
 # ---- screenshot.toml ----
 
@@ -172,7 +206,7 @@ hide_when_empty = true
 # Color scheme
 # palette =    # no default; unset by default
 # Icon theme an item's IconName is looked up in
-icon_theme = "Adwaita"
+icon_theme = "wlrix"
 
 [metrics]
 # Icon size

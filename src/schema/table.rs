@@ -557,7 +557,7 @@ pub const SETTINGS: &[Setting] = &[
         file: File::Desktop,
         path: &["appearance", "icon_theme"],
         kind: Kind::Str {
-            default: Some("Adwaita"),
+            default: Some("wlrix"),
         },
         owner: Owner::Desktop,
         reload: Reload::Live,
@@ -614,7 +614,7 @@ pub const SETTINGS: &[Setting] = &[
         file: File::Files,
         path: &["appearance", "icon_theme"],
         kind: Kind::Str {
-            default: Some("Adwaita"),
+            default: Some("wlrix"),
         },
         owner: Owner::Files,
         reload: Reload::Live,
@@ -1028,6 +1028,24 @@ pub const SETTINGS: &[Setting] = &[
                       than on its own, so a GTK application is told the same scheme the chrome \
                       around it is drawn in.",
     },
+    Setting {
+        key: "portal.appearance.icon_theme",
+        file: File::Portal,
+        path: &["appearance", "icon_theme"],
+        kind: Kind::Str {
+            default: Some("wlrix"),
+        },
+        owner: Owner::Portal,
+        // Live for the palette's reason: the SIGHUP is what emits `SettingChanged`, and a running
+        // application hears about the new theme through that and nothing else.
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Icon theme toolkits are told to use",
+        description: "Reported to GTK and Qt applications through \
+                      org.freedesktop.impl.portal.Settings, and only while it is installed. It \
+                      overrides both settings.ini and gsettings. Empty leaves the icon theme to \
+                      the next portal backend, which answers from gsettings.",
+    },
     // ---------------------------------------------------------------------------------------
     // screenshot.toml -- wlrix-screenshot/src/config.rs
     //
@@ -1254,7 +1272,7 @@ pub const SETTINGS: &[Setting] = &[
         file: File::Tray,
         path: &["appearance", "icon_theme"],
         kind: Kind::Str {
-            default: Some("Adwaita"),
+            default: Some("wlrix"),
         },
         owner: Owner::Tray,
         reload: Reload::Live,

@@ -231,6 +231,32 @@ impl Store {
         store
     }
 
+    /// Carry every group's *current* value to its bridge, as though it had just been set.
+    ///
+    /// Called once at startup. The bridges otherwise only run on a change, and a fresh install
+    /// has never had one: nobody has picked a scheme, so nothing ever wrote GTK's `gtk.css`, and
+    /// every GTK application drew plain Adwaita until somebody happened to change the palette.
+    /// Each bridge writes only what moved, so on every later start this costs a read and no
+    /// write.
+    pub fn bridge_current(&self) {
+        let inner = self.lock();
+        let mut changed = Changed::default();
+        for group in schema::GROUPS {
+            let Ok(canonical) = canonical_member(group) else {
+                continue;
+            };
+            // A scheme nobody has set is the default scheme, and GTK has to be told that too.
+            // The bridge resolves the empty string the way every component does.
+            let value = inner.values.get(canonical.key).cloned().or_else(|| {
+                matches!(group.kind, Kind::Str { .. }).then(|| Value::Str(String::new()))
+            });
+            if let Some(value) = value {
+                changed.values.insert(group.key, value);
+            }
+        }
+        bridge_groups(&changed, &inner);
+    }
+
     /// A poisoned mutex means a method handler panicked mid-update.
     ///
     /// What it holds is a cache of what is on disk plus a map of recently written bytes;

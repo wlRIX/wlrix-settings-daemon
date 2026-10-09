@@ -96,6 +96,10 @@ fn main() -> ExitCode {
         }
     };
 
+    // After the name is taken, for the reason `bridge_groups` runs after the announcement: the
+    // bus clients waiting on this daemon should not wait behind a write to GTK's files.
+    store.bridge_current();
+
     let mut watch = match watch::Watch::new(&roots) {
         Ok(watch) => watch,
         Err(err) => {
