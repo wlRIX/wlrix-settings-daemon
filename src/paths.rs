@@ -37,6 +37,7 @@ const SUBDIR: &str = "wlrix";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum File {
     Background,
+    Clipboard,
     Compositor,
     Desktop,
     Files,
@@ -51,6 +52,7 @@ pub enum File {
 /// Every file, in the order they are listed and dumped.
 pub const ALL: &[File] = &[
     File::Background,
+    File::Clipboard,
     File::Compositor,
     File::Desktop,
     File::Files,
@@ -67,6 +69,7 @@ impl File {
     pub fn namespace(self) -> &'static str {
         match self {
             Self::Background => "background",
+            Self::Clipboard => "clipboard",
             Self::Compositor => "compositor",
             Self::Desktop => "desktop",
             Self::Files => "files",

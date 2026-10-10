@@ -166,6 +166,8 @@ pub struct Choice {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Owner {
     Background,
+    /// `wlrix-clipboard`, the clipboard history daemon.
+    Clipboard,
     Compositor,
     Desktop,
     /// `wlrix-files`. Several may be running at once -- it is a window, not a daemon -- but
@@ -193,6 +195,7 @@ impl Owner {
     pub fn program(self) -> Option<&'static str> {
         match self {
             Self::Background => Some("wlrix-bg"),
+            Self::Clipboard => Some("wlrix-clipboard"),
             Self::Compositor => Some("wlrix-compositor"),
             Self::Desktop => Some("wlrix-desktop"),
             Self::Files => Some("wlrix-files"),
@@ -221,6 +224,7 @@ impl Owner {
     pub fn pidfile(self) -> Option<&'static str> {
         match self {
             Self::Background => Some("wlrix-bg.pid"),
+            Self::Clipboard => Some("wlrix-clipboard.pid"),
             Self::Compositor => Some("wlrix-compositor.pid"),
             Self::Desktop => Some("wlrix-desktop.pid"),
             Self::Files => Some("wlrix-files.pid"),

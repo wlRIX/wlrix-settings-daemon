@@ -119,6 +119,71 @@ pub const SETTINGS: &[Setting] = &[
                       screen when there is no picture or the mode is solid.",
     },
     // ---------------------------------------------------------------------------------------
+    // clipboard.toml -- wlrix-clipboard/src/config.rs
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "clipboard.max_entries",
+        file: File::Clipboard,
+        path: &["max_entries"],
+        kind: Kind::Int {
+            default: Some(50),
+            min: 1,
+            max: 10_000,
+        },
+        owner: Owner::Clipboard,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "How many entries the clipboard history keeps",
+        description: "Starred entries are kept as well as these, never instead of them, and are \
+                      only ever deleted by hand.",
+    },
+    Setting {
+        key: "clipboard.persist",
+        file: File::Clipboard,
+        path: &["persist"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Clipboard,
+        // Read once: a reload that turned it off would have to decide whether to delete the
+        // history already on disk, and that is not something a SIGHUP should decide.
+        reload: Reload::Restart,
+        unit: Unit::None,
+        summary: "Keep the clipboard history after logging out",
+        description: "Off keeps it in memory for the session only, stars included. Either way, \
+                      a copy a password manager marks as secret is never recorded.",
+    },
+    Setting {
+        key: "clipboard.keep_clipboard_full",
+        file: File::Clipboard,
+        path: &["keep_clipboard_full"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Clipboard,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Keep what was copied after the program closes",
+        description: "On Wayland the clipboard empties when the program something was copied \
+                      from exits. On, the history puts that entry back so it can still be \
+                      pasted.",
+    },
+    Setting {
+        key: "clipboard.max_entry_bytes",
+        file: File::Clipboard,
+        path: &["max_entry_bytes"],
+        kind: Kind::Int {
+            default: Some(16 * 1024 * 1024),
+            min: 1024,
+            max: 1024 * 1024 * 1024,
+        },
+        owner: Owner::Clipboard,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Largest copy recorded, in bytes",
+        description: "A bigger copy is still on the clipboard, just not in the history.",
+    },
+    // ---------------------------------------------------------------------------------------
     // compositor.toml -- wlrix-compositor/src/config.rs
     //
     // Everything here is `Reload::Live`: `State::reload_config` re-applies `[keyboard]` through
