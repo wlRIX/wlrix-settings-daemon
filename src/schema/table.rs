@@ -1264,6 +1264,88 @@ pub const SETTINGS: &[Setting] = &[
                       exactly: muting dialog-error leaves dialog-error-serious alone. \
                       com.wlrix.Sound1.Events lists every name the desktop plays.",
     },
+    Setting {
+        key: "sounds.output",
+        file: File::Sounds,
+        path: &["output"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Play desktop sounds through",
+        description: "A PipeWire sink, by node name. Empty follows the default output wherever \
+                      it moves; a sink that is not plugged in falls back to the default.",
+    },
+    // The System & Desktop Sounds panel's checkboxes, one per kind of sound -- wlrix-sound's
+    // `catalog::Category`. The defaults are a default IRIX 6.5 desktop's, kept in step by hand
+    // with `Config::plays` there.
+    Setting {
+        key: "sounds.play.startup",
+        file: File::Sounds,
+        path: &["play", "startup"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Startup & Shutdown Tunes",
+        description: "Logging in, logging out and locking the screen. Off by default: the sounds are an Indy's \
+                      power-on and power-off tunes, which IRIX never played at a login.",
+    },
+    Setting {
+        key: "sounds.play.desktop",
+        file: File::Sounds,
+        path: &["play", "desktop"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Desktop Sounds",
+        description: "Icons, folders, launching, drag-and-drop, the dumpster and disks: the IRIX soundscheme.",
+    },
+    Setting {
+        key: "sounds.play.windows",
+        file: File::Sounds,
+        path: &["play", "windows"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Window Sounds",
+        description: "Windows opening, closing, minimizing and restoring, and changing desks. Off by default, \
+                      as IRIX played none.",
+    },
+    Setting {
+        key: "sounds.play.alerts",
+        file: File::Sounds,
+        path: &["play", "alerts"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "System Alerts Sounds",
+        description: "Dialogs and other things that want attention.",
+    },
+    Setting {
+        key: "sounds.play.bell",
+        file: File::Sounds,
+        path: &["play", "bell"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Keyboard Bell",
+        description: "The bell: a refused action, or a terminal's bell.",
+    },
     // ---------------------------------------------------------------------------------------
     // tray.toml -- wlrix-tray/src/config.rs
     //

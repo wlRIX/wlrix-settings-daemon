@@ -207,6 +207,20 @@ enabled = true
 theme = "wlrix"
 # Muted sounds
 disabled = []
+# Play desktop sounds through
+# output =    # no default; unset by default
+
+[play]
+# Startup & Shutdown Tunes
+startup = false
+# Desktop Sounds
+desktop = true
+# Window Sounds
+windows = false
+# System Alerts Sounds
+alerts = true
+# Keyboard Bell
+bell = true
 
 # ---- tray.toml ----
 # Which monitor the tray is on
