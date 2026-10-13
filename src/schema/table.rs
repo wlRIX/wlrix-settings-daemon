@@ -1214,6 +1214,57 @@ pub const SETTINGS: &[Setting] = &[
                       installed one.",
     },
     // ---------------------------------------------------------------------------------------
+    // sounds.toml -- wlrix-sound/src/config.rs
+    //
+    // Which sounds play is decided in one place, the sound daemon; the components that ask for
+    // sounds never read this file. The list of sound names a panel offers switches for comes
+    // from the daemon itself (`com.wlrix.Sound1.Events`), not from here.
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "sounds.enabled",
+        file: File::Sounds,
+        path: &["enabled"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Play system sounds",
+        description: "Off silences every desktop sound, the login and logout sounds included. \
+                      Volume is the sound server's business: system sounds play as their own \
+                      stream, role Event, which the audio panel shows on its own.",
+    },
+    Setting {
+        key: "sounds.theme",
+        file: File::Sounds,
+        path: &["theme"],
+        kind: Kind::Str {
+            default: Some("wlrix"),
+        },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Sound theme",
+        description: "An XDG sound theme, by its directory name under share/sounds. wlrix is \
+                      the IRIX Indigo Magic soundscheme; freedesktop is the stock theme most \
+                      distributions ship. com.wlrix.Sound1.ListThemes lists what is installed. \
+                      A sound the theme lacks comes from the theme it inherits from.",
+    },
+    Setting {
+        key: "sounds.disabled",
+        file: File::Sounds,
+        path: &["disabled"],
+        kind: Kind::StrList { default: &[] },
+        owner: Owner::Sound,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Muted sounds",
+        description: "Sound names that never play, such as wlrix-launch or bell. Matched \
+                      exactly: muting dialog-error leaves dialog-error-serious alone. \
+                      com.wlrix.Sound1.Events lists every name the desktop plays.",
+    },
+    // ---------------------------------------------------------------------------------------
     // tray.toml -- wlrix-tray/src/config.rs
     //
     // `[[item]]` is absent for the usual reason: it is an array of tables keyed by an item's

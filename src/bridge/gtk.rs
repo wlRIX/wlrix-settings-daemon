@@ -59,6 +59,13 @@
 //! backend answered from gsettings and this line was never read. It matters to a GTK process
 //! that is not asking a portal -- GTK 3 without `GTK_USE_PORTAL=1`, or a session with none.
 //!
+//! ## And the sound theme
+//!
+//! `gtk-sound-theme-name` and `gtk-enable-event-sounds`, from `sounds.theme` and
+//! `sounds.enabled` ([`apply_sounds`]), so a GTK application's own event sounds -- libcanberra's
+//! -- come from the theme the desktop's do, and stop when the desktop's stop. These follow the
+//! sound settings rather than the scheme, and are written whenever either of those moves.
+//!
 //! `gtk-theme-name` is deliberately **not** set. libadwaita ignores it, and `share/themes/wlRIX`
 //! is a stylesheet directory rather than a complete GTK theme -- the widgets keep Adwaita's
 //! shape and only take wlRIX's colors. Claiming the name would promise a theme that is not
@@ -164,6 +171,41 @@ fn write_generation(
         _ => updated,
     };
     write_if_changed(&ini, &existing, &updated)
+}
+
+/// Point GTK's own event sounds at `theme`, and turn them on or off with the desktop's.
+///
+/// GTK 3 plays event sounds through libcanberra, which takes the theme and the switch from
+/// these two `settings.ini` keys; GTK 4 keeps the same two settings for whatever plays sounds on
+/// its behalf. Written for both, replacing what is there: unlike the icon theme, this one is a
+/// wlRIX setting with a panel of its own, and a GTK application making different sounds from the
+/// desktop would be the surprise. Never fails loudly, for [`apply`]'s reason.
+pub fn apply_sounds(config_home: &Path, theme: &str, enabled: bool) {
+    for generation in GENERATIONS {
+        let dir = config_home.join(generation);
+        if let Err(err) = write_sounds(&dir, theme, enabled) {
+            tracing::warn!("could not give {generation} the {theme} sound theme: {err}");
+        }
+    }
+}
+
+fn write_sounds(dir: &Path, theme: &str, enabled: bool) -> std::io::Result<()> {
+    std::fs::create_dir_all(dir)?;
+    let ini = dir.join("settings.ini");
+    let existing = read_or_empty(&ini)?;
+    let updated = sound_keys(&existing, theme, enabled);
+    write_if_changed(&ini, &existing, &updated)
+}
+
+/// `existing` with the two sound keys set.
+fn sound_keys(existing: &str, theme: &str, enabled: bool) -> String {
+    let updated = set_ini_key(existing, "Settings", "gtk-sound-theme-name", theme);
+    set_ini_key(
+        &updated,
+        "Settings",
+        "gtk-enable-event-sounds",
+        if enabled { "true" } else { "false" },
+    )
 }
 
 /// `gtk-application-prefer-dark-theme` for `scheme`, as `settings.ini` spells a boolean.
@@ -444,6 +486,22 @@ mod tests {
 
         // And it settles: a second pass adds nothing.
         assert_eq!(merge_block(&out, &block()), out);
+    }
+
+    #[test]
+    fn the_sound_keys_join_the_others() {
+        let theirs = "[Settings]\ngtk-decoration-layout=menu:minimize,maximize\n";
+        let out = sound_keys(theirs, "wlrix", true);
+        assert!(
+            out.contains("gtk-decoration-layout=menu:minimize,maximize"),
+            "{out}"
+        );
+        assert!(out.contains("gtk-sound-theme-name=wlrix"), "{out}");
+        assert!(out.contains("gtk-enable-event-sounds=true"), "{out}");
+        // Turning sounds off changes the switch and nothing else.
+        let off = sound_keys(&out, "wlrix", false);
+        assert!(off.contains("gtk-enable-event-sounds=false"), "{off}");
+        assert_eq!(off.matches("gtk-sound-theme-name").count(), 1, "{off}");
     }
 
     #[test]

@@ -51,6 +51,7 @@ lock.background.mode            ~/.config/wlrix/lock.toml         [background] m
 desktop.metrics.icon            ~/.config/wlrix/desktop.toml      [metrics] icon
 portal.preview.tick_ms          ~/.config/wlrix/portal.toml       [preview] tick_ms
 session.compositor              ~/.config/wlrix/session.toml      compositor
+sounds.theme                    ~/.config/wlrix/sounds.toml       theme
 ```
 
 …with one exception. `appearance.palette` is a **fan-out key**: its prefix is a category, not a file. Writing it writes

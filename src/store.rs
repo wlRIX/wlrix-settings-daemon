@@ -255,6 +255,7 @@ impl Store {
             }
         }
         bridge_groups(&changed, &inner);
+        bridge_sounds(&changed, &inner, true);
     }
 
     /// A poisoned mutex means a method handler panicked mid-update.
@@ -441,6 +442,7 @@ impl Store {
         }
         announce_groups(&mut changed, &inner);
         bridge_groups(&changed, &inner);
+        bridge_sounds(&changed, &inner, false);
 
         // One signal per owner, after every file is on disk -- so a batch spanning two of the
         // compositor's sections cannot have it read the first while the second is still a
@@ -530,6 +532,7 @@ impl Store {
         // single hand-edit only ever touches one of them.
         announce_groups(&mut changed, &inner);
         bridge_groups(&changed, &inner);
+        bridge_sounds(&changed, &inner, false);
 
         if !changed.values.is_empty() {
             notices.push(Notice::Changed(changed));
@@ -581,6 +584,45 @@ fn bridge_groups(changed: &Changed, inner: &Inner) {
         if let Some(Value::Str(scheme)) = changed.values.get(group.key) {
             crate::bridge::gtk::apply(config_home, scheme);
         }
+    }
+}
+
+/// Tell GTK the sound theme and whether event sounds are on, when either has moved -- or
+/// unconditionally, with `always`, which is how [`Store::bridge_current`] gets a fresh install
+/// to agree with `sounds.toml` before anybody has changed it.
+///
+/// Not a group: these are two ordinary settings that a program outside wlRIX happens to want
+/// too. libcanberra in a GTK application plays its own event sounds from this theme, so a GTK
+/// application's sounds and the desktop's come from the same place.
+fn bridge_sounds(changed: &Changed, inner: &Inner, always: bool) {
+    const THEME: &str = "sounds.theme";
+    const ENABLED: &str = "sounds.enabled";
+    if !always && !changed.values.contains_key(THEME) && !changed.values.contains_key(ENABLED) {
+        return;
+    }
+    let Some(config_home) = inner.roots.config_home() else {
+        return;
+    };
+    // Effective values, defaults included, so a change to one carries the other's current value
+    // with it. An empty theme is the default theme, as `wlrix-sound` reads it.
+    let theme = match inner.values.get(THEME) {
+        Some(Value::Str(theme)) if !theme.is_empty() => theme.clone(),
+        _ => schema::lookup(THEME)
+            .and_then(default_value)
+            .and_then(|value| match value {
+                Value::Str(theme) => Some(theme),
+                _ => None,
+            })
+            .unwrap_or_default(),
+    };
+    let enabled = !matches!(inner.values.get(ENABLED), Some(Value::Bool(false)));
+    crate::bridge::gtk::apply_sounds(config_home, &theme, enabled);
+    // The portal answers `org.gnome.desktop.sound` from `sounds.toml` too, and a running
+    // application only hears of a change through its `SettingChanged`. The portal is not these
+    // keys' owner -- `wlrix-sound` is, and has already been told -- so it is told here, the
+    // one place that knows the keys reach it. Not at startup: nothing has changed then.
+    if !always {
+        apply::notify(schema::Owner::Portal, schema::Reload::Live);
     }
 }
 

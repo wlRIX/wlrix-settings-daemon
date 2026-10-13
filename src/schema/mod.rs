@@ -185,6 +185,8 @@ pub enum Owner {
     /// because this enum also names *whose parser validates a candidate file* -- which is the
     /// load-bearing half, and `Owner::None` would give up.
     Screenshot,
+    /// `wlrix-sound`, the system sounds daemon.
+    Sound,
     Tray,
     /// Nothing to tell: the value is read once, by something that is not running yet.
     None,
@@ -203,6 +205,7 @@ impl Owner {
             Self::Lock => Some("wlrix-lock"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
             Self::Screenshot => Some("wlrix-screenshot"),
+            Self::Sound => Some("wlrix-sound"),
             Self::Tray => Some("wlrix-tray"),
             Self::None => None,
         }
@@ -230,6 +233,7 @@ impl Owner {
             Self::Files => Some("wlrix-files.pid"),
             Self::Idle => Some("wlrix-idle.pid"),
             Self::Portal => Some("xdg-desktop-portal-wlrix.pid"),
+            Self::Sound => Some("wlrix-sound.pid"),
             Self::Tray => Some("wlrix-tray.pid"),
             Self::Lock | Self::Screenshot | Self::None => None,
         }

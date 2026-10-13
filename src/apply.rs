@@ -205,6 +205,7 @@ mod tests {
         assert_eq!(Owner::Desktop.pidfile(), Some("wlrix-desktop.pid"));
         // Named for the binary, `wlrix-bg`, not for its config file's stem, `background`.
         assert_eq!(Owner::Background.pidfile(), Some("wlrix-bg.pid"));
+        assert_eq!(Owner::Sound.pidfile(), Some("wlrix-sound.pid"));
         // The portal is bus-activated, so this file appears late and may not exist at all --
         // which `reload_via_pidfile` already reports as "not running" rather than an error.
         assert_eq!(

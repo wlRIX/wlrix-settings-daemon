@@ -12,6 +12,16 @@ mode = "fill"
 # Desktop color
 color = "#555555"
 
+# ---- clipboard.toml ----
+# How many entries the clipboard history keeps
+max_entries = 50
+# Keep the clipboard history after logging out
+persist = true
+# Keep what was copied after the program closes
+keep_clipboard_full = true
+# Largest copy recorded, in bytes
+max_entry_bytes = 16777216
+
 # ---- compositor.toml ----
 
 [keyboard]
@@ -189,6 +199,14 @@ dim = 0.55
 # ---- session.toml ----
 # Compositor to run
 # compositor =    # no default; unset by default
+
+# ---- sounds.toml ----
+# Play system sounds
+enabled = true
+# Sound theme
+theme = "wlrix"
+# Muted sounds
+disabled = []
 
 # ---- tray.toml ----
 # Which monitor the tray is on
