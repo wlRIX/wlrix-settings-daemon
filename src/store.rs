@@ -443,6 +443,7 @@ impl Store {
         announce_groups(&mut changed, &inner);
         bridge_groups(&changed, &inner);
         bridge_sounds(&changed, &inner, false);
+        bridge_cursor(&changed);
 
         // One signal per owner, after every file is on disk -- so a batch spanning two of the
         // compositor's sections cannot have it read the first while the second is still a
@@ -533,6 +534,7 @@ impl Store {
         announce_groups(&mut changed, &inner);
         bridge_groups(&changed, &inner);
         bridge_sounds(&changed, &inner, false);
+        bridge_cursor(&changed);
 
         if !changed.values.is_empty() {
             notices.push(Notice::Changed(changed));
@@ -624,6 +626,28 @@ fn bridge_sounds(changed: &Changed, inner: &Inner, always: bool) {
     if !always {
         apply::notify(schema::Owner::Portal, schema::Reload::Live);
     }
+}
+
+/// Tell the portal when the pointer theme moved.
+///
+/// `xdg-desktop-portal-wlrix` answers `org.gnome.desktop.interface` `cursor-theme` and
+/// `cursor-size` from `compositor.toml`'s `[cursor]`, and a running application only hears of a
+/// change through its `SettingChanged`. The portal is not these keys' owner -- the compositor is,
+/// and has already been told -- so, as with the sound keys, it is told here. There is nothing to
+/// write for it: it reads the compositor's file itself. Not at startup, which is why there is no
+/// `always`: nothing has changed then.
+fn bridge_cursor(changed: &Changed) {
+    if cursor_moved(changed) {
+        apply::notify(schema::Owner::Portal, schema::Reload::Live);
+    }
+}
+
+/// Whether `changed` holds either `[cursor]` key. Split out so it can be tested without sending
+/// anyone a signal.
+fn cursor_moved(changed: &Changed) -> bool {
+    const THEME: &str = "compositor.cursor.theme";
+    const SIZE: &str = "compositor.cursor.size";
+    changed.values.contains_key(THEME) || changed.values.contains_key(SIZE)
 }
 
 /// Add each group key whose members moved, so a client watching only `appearance.palette` hears
@@ -1585,5 +1609,24 @@ mod tests {
         let deadzone = schema::lookup("idle.gamepad.deadzone").unwrap();
         let document = Document::parse("[gamepad]\ndeadzone = 1\n").unwrap();
         assert_eq!(value_of(&document, deadzone), Some(Value::Float(1.0)));
+    }
+
+    #[test]
+    fn a_cursor_change_reaches_the_portal_and_nothing_else_does() {
+        // The keys are spelled out in `cursor_moved`, so a rename in the table would silently
+        // stop the portal hearing of a change. They have to exist.
+        for key in ["compositor.cursor.theme", "compositor.cursor.size"] {
+            assert!(schema::lookup(key).is_some(), "{key} is not in the table");
+            let mut changed = Changed::default();
+            changed.values.insert(key, Value::Str("sgi".into()));
+            assert!(cursor_moved(&changed), "{key}");
+        }
+
+        let mut other = Changed::default();
+        other
+            .values
+            .insert("compositor.focus.policy", Value::Str("pointer".into()));
+        assert!(!cursor_moved(&other));
+        assert!(!cursor_moved(&Changed::default()));
     }
 }

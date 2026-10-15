@@ -192,9 +192,18 @@ pub const SETTINGS: &[Setting] = &[
     // reloaded config is in force for the next click. `[[output]]` is the exception and is absent
     // from this table -- see below.
     //
-    // `[cursor]` is live for the *compositor's* pointer only. Clients read XCURSOR_THEME from
-    // their own environment, fixed when they were started, so a running app keeps the theme it
-    // launched with however many reloads happen; the change is whole at the next login.
+    // `[cursor]` reaches clients three ways, and only two of them are live:
+    // - The compositor reloads its own pointer, and republishes the theme to XWayland as the
+    //   root window's `Xcursor.theme`/`Xcursor.size` and its root cursor. X11 applications
+    //   started afterwards follow it, Chromium-based ones included; one already running read
+    //   its theme once and keeps it.
+    // - xdg-desktop-portal-wlrix answers `org.gnome.desktop.interface` `cursor-theme` and
+    //   `cursor-size` from this section, and is signaled when either moves -- see
+    //   `bridge_cursor` in store.rs -- so a toolkit that follows `SettingChanged` (GTK 4, and
+    //   GTK 3 with GTK_USE_PORTAL=1) changes its pointer in a running window.
+    // - XCURSOR_THEME/XCURSOR_SIZE, which libwayland-cursor and libXcursor read, are fixed in an
+    //   application's environment when it starts, and the session's copy is set at login. Those
+    //   applications pick up the change at the next login.
     // ---------------------------------------------------------------------------------------
     Setting {
         key: "compositor.keyboard.rules",
