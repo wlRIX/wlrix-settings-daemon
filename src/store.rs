@@ -443,7 +443,7 @@ impl Store {
         announce_groups(&mut changed, &inner);
         bridge_groups(&changed, &inner);
         bridge_sounds(&changed, &inner, false);
-        bridge_cursor(&changed);
+        bridge_portal(&changed);
 
         // One signal per owner, after every file is on disk -- so a batch spanning two of the
         // compositor's sections cannot have it read the first while the second is still a
@@ -534,7 +534,7 @@ impl Store {
         announce_groups(&mut changed, &inner);
         bridge_groups(&changed, &inner);
         bridge_sounds(&changed, &inner, false);
-        bridge_cursor(&changed);
+        bridge_portal(&changed);
 
         if !changed.values.is_empty() {
             notices.push(Notice::Changed(changed));
@@ -628,26 +628,33 @@ fn bridge_sounds(changed: &Changed, inner: &Inner, always: bool) {
     }
 }
 
-/// Tell the portal when the pointer theme moved.
+/// The compositor's keys that `xdg-desktop-portal-wlrix` also serves: the pointer theme and
+/// size as `org.gnome.desktop.interface` `cursor-theme` and `cursor-size`, and the double-click
+/// time as `org.gnome.desktop.peripherals.mouse` `double-click`.
+const PORTAL_READS: [&str; 3] = [
+    "compositor.cursor.theme",
+    "compositor.cursor.size",
+    "compositor.mouse.double_click_ms",
+];
+
+/// Tell the portal when one of [`PORTAL_READS`] moved.
 ///
-/// `xdg-desktop-portal-wlrix` answers `org.gnome.desktop.interface` `cursor-theme` and
-/// `cursor-size` from `compositor.toml`'s `[cursor]`, and a running application only hears of a
-/// change through its `SettingChanged`. The portal is not these keys' owner -- the compositor is,
-/// and has already been told -- so, as with the sound keys, it is told here. There is nothing to
-/// write for it: it reads the compositor's file itself. Not at startup, which is why there is no
-/// `always`: nothing has changed then.
-fn bridge_cursor(changed: &Changed) {
-    if cursor_moved(changed) {
+/// A running application only hears of a change through the portal's `SettingChanged`. The
+/// portal is not these keys' owner -- the compositor is, and has already been told -- so, as with
+/// the sound keys, it is told here. There is nothing to write for it: it reads the compositor's
+/// file itself. Not at startup, which is why there is no `always`: nothing has changed then.
+fn bridge_portal(changed: &Changed) {
+    if portal_reads_any(changed) {
         apply::notify(schema::Owner::Portal, schema::Reload::Live);
     }
 }
 
-/// Whether `changed` holds either `[cursor]` key. Split out so it can be tested without sending
-/// anyone a signal.
-fn cursor_moved(changed: &Changed) -> bool {
-    const THEME: &str = "compositor.cursor.theme";
-    const SIZE: &str = "compositor.cursor.size";
-    changed.values.contains_key(THEME) || changed.values.contains_key(SIZE)
+/// Whether `changed` holds any of [`PORTAL_READS`]. Split out so it can be tested without
+/// sending anyone a signal.
+fn portal_reads_any(changed: &Changed) -> bool {
+    PORTAL_READS
+        .iter()
+        .any(|key| changed.values.contains_key(key))
 }
 
 /// Add each group key whose members moved, so a client watching only `appearance.palette` hears
@@ -1612,21 +1619,21 @@ mod tests {
     }
 
     #[test]
-    fn a_cursor_change_reaches_the_portal_and_nothing_else_does() {
-        // The keys are spelled out in `cursor_moved`, so a rename in the table would silently
+    fn what_the_portal_reads_reaches_it_and_nothing_else_does() {
+        // The keys are spelled out in `PORTAL_READS`, so a rename in the table would silently
         // stop the portal hearing of a change. They have to exist.
-        for key in ["compositor.cursor.theme", "compositor.cursor.size"] {
+        for key in PORTAL_READS {
             assert!(schema::lookup(key).is_some(), "{key} is not in the table");
             let mut changed = Changed::default();
             changed.values.insert(key, Value::Str("sgi".into()));
-            assert!(cursor_moved(&changed), "{key}");
+            assert!(portal_reads_any(&changed), "{key}");
         }
 
         let mut other = Changed::default();
         other
             .values
             .insert("compositor.focus.policy", Value::Str("pointer".into()));
-        assert!(!cursor_moved(&other));
-        assert!(!cursor_moved(&Changed::default()));
+        assert!(!portal_reads_any(&other));
+        assert!(!portal_reads_any(&Changed::default()));
     }
 }

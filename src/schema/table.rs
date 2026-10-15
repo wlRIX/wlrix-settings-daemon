@@ -199,7 +199,7 @@ pub const SETTINGS: &[Setting] = &[
     //   its theme once and keeps it.
     // - xdg-desktop-portal-wlrix answers `org.gnome.desktop.interface` `cursor-theme` and
     //   `cursor-size` from this section, and is signaled when either moves -- see
-    //   `bridge_cursor` in store.rs -- so a toolkit that follows `SettingChanged` (GTK 4, and
+    //   `bridge_portal` in store.rs -- so a toolkit that follows `SettingChanged` (GTK 4, and
     //   GTK 3 with GTK_USE_PORTAL=1) changes its pointer in a running window.
     // - XCURSOR_THEME/XCURSOR_SIZE, which libwayland-cursor and libXcursor read, are fixed in an
     //   application's environment when it starts, and the session's copy is set at login. Those
@@ -415,6 +415,60 @@ pub const SETTINGS: &[Setting] = &[
                       the nearest is used. sgi has 32 and nothing else, which is what the system \
                       default config asks for -- anything else would get the same images and \
                       tell every client to resample them.",
+    },
+    Setting {
+        key: "compositor.mouse.acceleration",
+        file: File::Compositor,
+        path: &["mouse", "acceleration"],
+        // libinput's own range and its own default. Strictly, absent means "each device's
+        // default speed", which libinput puts at 0 for every pointer it ships a profile for --
+        // so 0 is the value a panel shows, and writing it changes nothing.
+        kind: Kind::Float {
+            default: Some(0.0),
+            min: -1.0,
+            max: 1.0,
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Mouse acceleration",
+        description: "libinput's pointer speed, from -1 (slowest) to 1 (fastest). Applies to \
+                      every mouse and touchpad, including ones plugged in later. Under a nested \
+                      compositor the host decides.",
+    },
+    Setting {
+        key: "compositor.mouse.left_handed",
+        file: File::Compositor,
+        path: &["mouse", "left_handed"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Left-handed mouse",
+        description: "Swaps the primary and secondary buttons; the middle button stays where it \
+                      is. A button held down when this changes keeps its old meaning until it \
+                      is released.",
+    },
+    Setting {
+        key: "compositor.mouse.double_click_ms",
+        file: File::Compositor,
+        path: &["mouse", "double_click_ms"],
+        // 100 is about as fast as anyone clicks twice on purpose; below it a double click is
+        // effectively impossible to make, which is a setting nobody can undo with the mouse.
+        kind: Kind::Int {
+            default: Some(400),
+            min: 100,
+            max: 1500,
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::Milliseconds,
+        summary: "Double-click time",
+        description: "The longest gap between the two clicks of a double click. The compositor's \
+                      window-menu button uses it, and GTK applications are told it through the \
+                      portal.",
     },
     Setting {
         key: "compositor.idle.blank_after_secs",
