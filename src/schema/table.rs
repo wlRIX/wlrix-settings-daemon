@@ -1340,6 +1340,81 @@ pub const SETTINGS: &[Setting] = &[
         summary: "Lines of body text",
         description: "A longer body is cut off with an ellipsis.",
     },
+    Setting {
+        key: "osd.bar.duration",
+        file: File::Osd,
+        path: &["bar", "duration"],
+        kind: Kind::Float {
+            default: Some(1.5),
+            min: 0.3,
+            max: 10.0,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "How long the volume and brightness bar stays",
+        description: "Counted from the last change, so pressing a key again keeps it up.",
+    },
+    Setting {
+        key: "osd.keys.volume_step",
+        file: File::Osd,
+        path: &["keys", "volume_step"],
+        kind: Kind::Int {
+            default: Some(5),
+            min: 1,
+            max: 25,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Volume step per key press, in percent",
+        description: "Steps land on multiples of themselves, so the levels shown stay round.",
+    },
+    Setting {
+        key: "osd.keys.volume_max",
+        file: File::Osd,
+        path: &["keys", "volume_max"],
+        kind: Kind::Int {
+            default: Some(100),
+            min: 100,
+            max: 150,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "The loudest the volume keys go, in percent",
+        description: "Past 100 is amplification, which distorts on most speakers. The bar marks \
+                      where 100 is.",
+    },
+    Setting {
+        key: "osd.keys.brightness_step",
+        file: File::Osd,
+        path: &["keys", "brightness_step"],
+        kind: Kind::Int {
+            default: Some(5),
+            min: 1,
+            max: 25,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Brightness step per key press, in percent",
+        description: "Of the panel's range. The darkest step is never off.",
+    },
+    Setting {
+        key: "osd.keys.sound",
+        file: File::Osd,
+        path: &["keys", "sound"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Click as the volume changes",
+        description: "A short sound from wlrix-sound at the new level, so the change is heard as \
+                      well as shown.",
+    },
     // ---------------------------------------------------------------------------------------
     // portal.toml -- xdg-desktop-portal-wlrix/src/config.rs
     //

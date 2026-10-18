@@ -212,6 +212,20 @@ margin = 12
 # Lines of body text
 body_lines = 6
 
+[bar]
+# How long the volume and brightness bar stays
+duration = 1.5
+
+[keys]
+# Volume step per key press, in percent
+volume_step = 5
+# The loudest the volume keys go, in percent
+volume_max = 100
+# Brightness step per key press, in percent
+brightness_step = 5
+# Click as the volume changes
+sound = true
+
 # ---- portal.toml ----
 
 [preview]
