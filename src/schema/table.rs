@@ -1099,6 +1099,217 @@ pub const SETTINGS: &[Setting] = &[
                       picture or the mode is solid.",
     },
     // ---------------------------------------------------------------------------------------
+    // osd.toml -- wlrix-osd/src/config.rs
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "osd.output",
+        file: File::Osd,
+        path: &["output"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Which monitor notifications appear on",
+        description: "A connector name (DP-1, HDMI-A-1). Empty means the one at the origin. A \
+                      name that is not plugged in falls back to that with a line on stderr.",
+    },
+    Setting {
+        key: "osd.anchor",
+        file: File::Osd,
+        path: &["anchor"],
+        kind: Kind::Enum {
+            default: Some("top-right"),
+            // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-osd's `Anchor` accepts.
+            choices: &[
+                Choice {
+                    value: "top-right",
+                    label: "Top right",
+                },
+                Choice {
+                    value: "top-left",
+                    label: "Top left",
+                },
+                Choice {
+                    value: "bottom-right",
+                    label: "Bottom right",
+                },
+                Choice {
+                    value: "bottom-left",
+                    label: "Bottom left",
+                },
+            ],
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Which corner notifications stack in",
+        description: "The newest sits nearest the corner and older ones stack away from it.",
+    },
+    Setting {
+        key: "osd.max_visible",
+        file: File::Osd,
+        path: &["max_visible"],
+        kind: Kind::Int {
+            default: Some(5),
+            min: 1,
+            max: 20,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Notifications on screen at once",
+        description: "The rest wait below the stack, behind a tab saying how many, and their \
+                      timers do not start until they are shown.",
+    },
+    Setting {
+        key: "osd.width",
+        file: File::Osd,
+        path: &["width"],
+        kind: Kind::Int {
+            default: Some(360),
+            min: 200,
+            max: 1000,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Notification width",
+        description: "One notification, its 4Dwm frame included.",
+    },
+    Setting {
+        key: "osd.timeout.low",
+        file: File::Osd,
+        path: &["timeout", "low"],
+        kind: Kind::Int {
+            default: Some(5),
+            min: 0,
+            max: 3600,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "How long a low-urgency notification stays",
+        description: "When its sender leaves the choice to the server. 0 means until dismissed.",
+    },
+    Setting {
+        key: "osd.timeout.normal",
+        file: File::Osd,
+        path: &["timeout", "normal"],
+        kind: Kind::Int {
+            default: Some(8),
+            min: 0,
+            max: 3600,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "How long a notification stays",
+        description: "When its sender leaves the choice to the server, which most do. 0 means \
+                      until dismissed.",
+    },
+    Setting {
+        key: "osd.timeout.critical",
+        file: File::Osd,
+        path: &["timeout", "critical"],
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 3600,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "How long a critical notification stays",
+        description: "Used whatever its sender asked for: the specification asks for critical \
+                      notifications not to expire, and 0, the default, means until dismissed.",
+    },
+    Setting {
+        key: "osd.appearance.palette",
+        file: File::Osd,
+        path: &["appearance", "palette"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Color scheme",
+        description: "A scheme id from wlrix-ui. Empty or unrecognized means the default, with \
+                      a line on stderr for the latter.",
+    },
+    Setting {
+        key: "osd.appearance.icon_theme",
+        file: File::Osd,
+        path: &["appearance", "icon_theme"],
+        kind: Kind::Str {
+            default: Some("wlrix"),
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Icon theme an icon name is looked up in",
+        description: "Searched before hicolor and /usr/share/pixmaps. Empty means no named theme.",
+    },
+    Setting {
+        key: "osd.metrics.icon",
+        file: File::Osd,
+        path: &["metrics", "icon"],
+        kind: Kind::Int {
+            default: Some(48),
+            min: 16,
+            max: 128,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Picture size",
+        description: "The square slot beside the text. Pictures are shrunk to fit and never \
+                      enlarged.",
+    },
+    Setting {
+        key: "osd.metrics.gap",
+        file: File::Osd,
+        path: &["metrics", "gap"],
+        kind: Kind::Int {
+            default: Some(6),
+            min: 0,
+            max: 64,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Gap between notifications",
+        description: "Clicks in the gap reach the window underneath.",
+    },
+    Setting {
+        key: "osd.metrics.margin",
+        file: File::Osd,
+        path: &["metrics", "margin"],
+        kind: Kind::Int {
+            default: Some(12),
+            min: 0,
+            max: 200,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::Pixels,
+        summary: "Distance from the screen edges",
+        description: "Between the stack and the two edges of its corner.",
+    },
+    Setting {
+        key: "osd.metrics.body_lines",
+        file: File::Osd,
+        path: &["metrics", "body_lines"],
+        kind: Kind::Int {
+            default: Some(6),
+            min: 1,
+            max: 40,
+        },
+        owner: Owner::Osd,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Lines of body text",
+        description: "A longer body is cut off with an ellipsis.",
+    },
+    // ---------------------------------------------------------------------------------------
     // portal.toml -- xdg-desktop-portal-wlrix/src/config.rs
     //
     // `Reload::Live` throughout, since the portal gained a pidfile and a SIGHUP handler

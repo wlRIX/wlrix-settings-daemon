@@ -58,6 +58,14 @@ opaque_resize = true
 # Cursor size
 # size =    # no default; unset by default
 
+[mouse]
+# Mouse acceleration
+acceleration = 0.0
+# Left-handed mouse
+left_handed = false
+# Double-click time
+double_click_ms = 400
+
 [idle]
 # Blank the screen after (deprecated)
 # blank_after_secs =    # no default; unset by default
@@ -165,6 +173,40 @@ time_format = "%H:%M"
 mode = "fill"
 # Lock screen color
 color = "#555555"
+
+# ---- osd.toml ----
+# Which monitor notifications appear on
+# output =    # no default; unset by default
+# Which corner notifications stack in
+anchor = "top-right"
+# Notifications on screen at once
+max_visible = 5
+# Notification width
+width = 360
+
+[timeout]
+# How long a low-urgency notification stays
+low = 5
+# How long a notification stays
+normal = 8
+# How long a critical notification stays
+critical = 0
+
+[appearance]
+# Color scheme
+# palette =    # no default; unset by default
+# Icon theme an icon name is looked up in
+icon_theme = "wlrix"
+
+[metrics]
+# Picture size
+icon = 48
+# Gap between notifications
+gap = 6
+# Distance from the screen edges
+margin = 12
+# Lines of body text
+body_lines = 6
 
 # ---- portal.toml ----
 

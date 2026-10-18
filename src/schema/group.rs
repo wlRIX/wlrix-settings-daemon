@@ -60,6 +60,7 @@ pub static GROUPS: &[Group] = &[Group {
         "compositor.appearance.palette",
         "desktop.appearance.palette",
         "lock.appearance.palette",
+        "osd.appearance.palette",
         // The portal does not draw anything. It is here because it is what *tells* GTK and Qt
         // applications which scheme the session is in, through
         // `org.freedesktop.impl.portal.Settings` -- so a toolkit picks the same light or dark as
@@ -71,8 +72,8 @@ pub static GROUPS: &[Group] = &[Group {
     kind: Kind::Str { default: None },
     summary: "Color scheme",
     description: "The scheme everything wlRIX draws is colored from -- window chrome, desktop \
-                  icons, the lock screen, the tray, the screenshot overlay and the \
-                  applications. A scheme id \
+                  icons, the lock screen, notifications, the tray, the screenshot overlay \
+                  and the applications. A scheme id \
                   from wlrix-ui: classic, classic-g10, classic-g24, gotham. Empty or \
                   unrecognized means the default, with a line in each component's log for the \
                   latter. Writing this writes every component's own key; each can still be set \

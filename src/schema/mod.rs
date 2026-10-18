@@ -179,6 +179,8 @@ pub enum Owner {
     /// locked and reads its config each time it starts, with no reload on purpose. An owner for
     /// the same reason -- its parser is what validates a candidate `lock.toml`.
     Lock,
+    /// `wlrix-osd`, the notification daemon.
+    Osd,
     Portal,
     /// `wlrix-screenshot`. Not a daemon: it runs for as long as one screenshot takes and reads
     /// its config each time, so there is never one to signal. It is an owner all the same,
@@ -203,6 +205,7 @@ impl Owner {
             Self::Files => Some("wlrix-files"),
             Self::Idle => Some("wlrix-idle"),
             Self::Lock => Some("wlrix-lock"),
+            Self::Osd => Some("wlrix-osd"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
             Self::Screenshot => Some("wlrix-screenshot"),
             Self::Sound => Some("wlrix-sound"),
@@ -232,6 +235,7 @@ impl Owner {
             Self::Desktop => Some("wlrix-desktop.pid"),
             Self::Files => Some("wlrix-files.pid"),
             Self::Idle => Some("wlrix-idle.pid"),
+            Self::Osd => Some("wlrix-osd.pid"),
             Self::Portal => Some("xdg-desktop-portal-wlrix.pid"),
             Self::Sound => Some("wlrix-sound.pid"),
             Self::Tray => Some("wlrix-tray.pid"),

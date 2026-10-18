@@ -55,8 +55,8 @@ sounds.theme                    ~/.config/wlrix/sounds.toml       theme
 ```
 
 …with one exception. `appearance.palette` is a **fan-out key**: its prefix is a category, not a file. Writing it writes
-`[appearance] palette` into `compositor.toml`, `desktop.toml`, `lock.toml`, `portal.toml`, `screenshot.toml` *and*
-`tray.toml`, and tells every owner. See "One setting, several files" below.
+`[appearance] palette` into `compositor.toml`, `desktop.toml`, `lock.toml`, `osd.toml`, `portal.toml`,
+`screenshot.toml` *and* `tray.toml`, and tells every owner. See "One setting, several files" below.
 
 | Member                          | Signature                          |                                                                    |
 |---------------------------------|------------------------------------|--------------------------------------------------------------------|
@@ -92,7 +92,7 @@ your panel will fight its own debounce timer.
 
 **One setting, several files.** Almost every key has one file and one owner, which is right: `[keyboard] layout` is the
 compositor's and nobody else's. A color scheme is not like that — it has to reach the compositor's window chrome, the
-desktop's icons, the lock screen, the tray and the screenshot overlay at once, and each of those reads it out of its own file. Declaring
+desktop's icons, the lock screen, notifications, the tray and the screenshot overlay at once, and each of those reads it out of its own file. Declaring
 it once per component would offer four switches for one setting, and somebody who moved three of them would be left
 with a desktop that half changed.
 

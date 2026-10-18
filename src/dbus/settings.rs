@@ -724,6 +724,7 @@ mod tests {
                 "compositor.appearance.palette".into(),
                 "desktop.appearance.palette".into(),
                 "lock.appearance.palette".into(),
+                "osd.appearance.palette".into(),
                 "portal.appearance.palette".into(),
                 "screenshot.appearance.palette".into(),
                 "tray.appearance.palette".into(),
