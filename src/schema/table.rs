@@ -1099,6 +1099,37 @@ pub const SETTINGS: &[Setting] = &[
                       picture or the mode is solid.",
     },
     // ---------------------------------------------------------------------------------------
+    // network.toml -- wlrix-network/src/config.rs
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "network.indicator",
+        file: File::Network,
+        path: &["indicator"],
+        kind: Kind::Enum {
+            default: Some("auto"),
+            // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-network's `Indicator`
+            // accepts.
+            choices: &[
+                Choice {
+                    value: "auto",
+                    label: "When there is a wireless device",
+                },
+                Choice {
+                    value: "hidden",
+                    label: "Never",
+                },
+            ],
+        },
+        owner: Owner::Network,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Show the Wi-Fi icon in the tray",
+        description: "Auto shows it whenever NetworkManager reports a wireless device and hides \
+                      it otherwise, so a desktop on a cable shows nothing. Hidden is for a \
+                      machine with a Wi-Fi card that is only ever used on Ethernet; the daemon \
+                      keeps running either way.",
+    },
+    // ---------------------------------------------------------------------------------------
     // osd.toml -- wlrix-osd/src/config.rs
     // ---------------------------------------------------------------------------------------
     Setting {

@@ -179,6 +179,8 @@ pub enum Owner {
     /// locked and reads its config each time it starts, with no reload on purpose. An owner for
     /// the same reason -- its parser is what validates a candidate `lock.toml`.
     Lock,
+    /// `wlrix-network`, the Wi-Fi indicator.
+    Network,
     /// `wlrix-osd`, the notification daemon.
     Osd,
     Portal,
@@ -205,6 +207,7 @@ impl Owner {
             Self::Files => Some("wlrix-files"),
             Self::Idle => Some("wlrix-idle"),
             Self::Lock => Some("wlrix-lock"),
+            Self::Network => Some("wlrix-network"),
             Self::Osd => Some("wlrix-osd"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
             Self::Screenshot => Some("wlrix-screenshot"),
@@ -235,6 +238,7 @@ impl Owner {
             Self::Desktop => Some("wlrix-desktop.pid"),
             Self::Files => Some("wlrix-files.pid"),
             Self::Idle => Some("wlrix-idle.pid"),
+            Self::Network => Some("wlrix-network.pid"),
             Self::Osd => Some("wlrix-osd.pid"),
             Self::Portal => Some("xdg-desktop-portal-wlrix.pid"),
             Self::Sound => Some("wlrix-sound.pid"),
