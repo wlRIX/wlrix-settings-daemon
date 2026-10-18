@@ -238,6 +238,12 @@ tick_ms = 100
 # Icon theme toolkits are told to use
 icon_theme = "wlrix"
 
+# ---- power.toml ----
+# Show the battery icon in the tray
+indicator = "auto"
+# Warn when the battery is low
+warnings = true
+
 # ---- screenshot.toml ----
 
 [save]

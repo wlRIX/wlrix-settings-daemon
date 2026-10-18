@@ -1492,6 +1492,50 @@ pub const SETTINGS: &[Setting] = &[
                       the next portal backend, which answers from gsettings.",
     },
     // ---------------------------------------------------------------------------------------
+    // power.toml -- wlrix-power/src/config.rs
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "power.indicator",
+        file: File::Power,
+        path: &["indicator"],
+        kind: Kind::Enum {
+            default: Some("auto"),
+            // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-power's `Indicator`
+            // accepts.
+            choices: &[
+                Choice {
+                    value: "auto",
+                    label: "When there is a battery",
+                },
+                Choice {
+                    value: "hidden",
+                    label: "Never",
+                },
+            ],
+        },
+        owner: Owner::Power,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Show the battery icon in the tray",
+        description: "Auto shows it whenever UPower reports a battery and hides it otherwise, so \
+                      a desktop shows nothing. Low-battery warnings still come when it is hidden.",
+    },
+    Setting {
+        key: "power.warnings",
+        file: File::Power,
+        path: &["warnings"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Power,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Warn when the battery is low",
+        description: "A notification at UPower's low, critical and action levels, each replacing \
+                      the last, taken down when the machine is plugged in. The levels are \
+                      UPower's, set in /etc/UPower/UPower.conf.",
+    },
+    // ---------------------------------------------------------------------------------------
     // screenshot.toml -- wlrix-screenshot/src/config.rs
     //
     // `Reload::None` throughout, and for a different reason from the portal's: there is nothing

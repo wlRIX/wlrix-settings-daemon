@@ -184,6 +184,8 @@ pub enum Owner {
     /// `wlrix-osd`, the notification daemon.
     Osd,
     Portal,
+    /// `wlrix-power`, the battery indicator.
+    Power,
     /// `wlrix-screenshot`. Not a daemon: it runs for as long as one screenshot takes and reads
     /// its config each time, so there is never one to signal. It is an owner all the same,
     /// because this enum also names *whose parser validates a candidate file* -- which is the
@@ -210,6 +212,7 @@ impl Owner {
             Self::Network => Some("wlrix-network"),
             Self::Osd => Some("wlrix-osd"),
             Self::Portal => Some("xdg-desktop-portal-wlrix"),
+            Self::Power => Some("wlrix-power"),
             Self::Screenshot => Some("wlrix-screenshot"),
             Self::Sound => Some("wlrix-sound"),
             Self::Tray => Some("wlrix-tray"),
@@ -241,6 +244,7 @@ impl Owner {
             Self::Network => Some("wlrix-network.pid"),
             Self::Osd => Some("wlrix-osd.pid"),
             Self::Portal => Some("xdg-desktop-portal-wlrix.pid"),
+            Self::Power => Some("wlrix-power.pid"),
             Self::Sound => Some("wlrix-sound.pid"),
             Self::Tray => Some("wlrix-tray.pid"),
             Self::Lock | Self::Screenshot | Self::None => None,
