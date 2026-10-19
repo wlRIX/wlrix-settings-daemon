@@ -433,8 +433,8 @@ pub const SETTINGS: &[Setting] = &[
         unit: Unit::None,
         summary: "Mouse acceleration",
         description: "libinput's pointer speed, from -1 (slowest) to 1 (fastest). Applies to \
-                      every mouse and touchpad, including ones plugged in later. Under a nested \
-                      compositor the host decides.",
+                      every mouse and trackpoint, including ones plugged in later; touchpads \
+                      have their own. Under a nested compositor the host decides.",
     },
     Setting {
         key: "compositor.mouse.left_handed",
@@ -447,8 +447,8 @@ pub const SETTINGS: &[Setting] = &[
         reload: Reload::Live,
         unit: Unit::None,
         summary: "Left-handed mouse",
-        description: "Swaps the primary and secondary buttons; the middle button stays where it \
-                      is. A button held down when this changes keeps its old meaning until it \
+        description: "Swaps the primary and secondary buttons, on touchpads too, taps included; \
+                      the middle button stays where it is. A button held down when this changes keeps its old meaning until it \
                       is released.",
     },
     Setting {
@@ -469,6 +469,158 @@ pub const SETTINGS: &[Setting] = &[
         description: "The longest gap between the two clicks of a double click. The compositor's \
                       window-menu button uses it, and GTK applications are told it through the \
                       portal.",
+    },
+    Setting {
+        key: "compositor.touchpad.acceleration",
+        file: File::Compositor,
+        path: &["touchpad", "acceleration"],
+        // As compositor.mouse.acceleration: libinput's range, and 0 is each pad's own default.
+        kind: Kind::Float {
+            default: Some(0.0),
+            min: -1.0,
+            max: 1.0,
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Touchpad acceleration",
+        description: "libinput's pointer speed for touchpads, from -1 (slowest) to 1 (fastest), \
+                      separate from the mouse's.",
+    },
+    Setting {
+        key: "compositor.touchpad.tap",
+        file: File::Compositor,
+        path: &["touchpad", "tap"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Tap to click",
+        description: "A one-finger tap is a click, two fingers the secondary click, three the \
+                      middle. On by default, unlike libinput's own default: a touchpad with no \
+                      buttons is otherwise only usable by pressing the whole pad down.",
+    },
+    Setting {
+        key: "compositor.touchpad.tap_drag",
+        file: File::Compositor,
+        path: &["touchpad", "tap_drag"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Tap and drag",
+        description: "Tap, then touch the pad again and move, to drag. Needs tap to click.",
+    },
+    Setting {
+        key: "compositor.touchpad.drag_lock",
+        file: File::Compositor,
+        path: &["touchpad", "drag_lock"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Drag lock",
+        description: "Lifting the finger in the middle of a tap-and-drag does not end it straight \
+                      away, so one drag can take several strokes across the pad.",
+    },
+    Setting {
+        key: "compositor.touchpad.natural_scroll",
+        file: File::Compositor,
+        path: &["touchpad", "natural_scroll"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Natural scrolling",
+        description: "Content follows the fingers, as on a phone, rather than the scroll bar.",
+    },
+    Setting {
+        key: "compositor.touchpad.disable_while_typing",
+        file: File::Compositor,
+        path: &["touchpad", "disable_while_typing"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Disable while typing",
+        description: "Ignore the touchpad for a moment after each key press, so a palm resting \
+                      on it does not move the pointer.",
+    },
+    Setting {
+        key: "compositor.touchpad.scroll",
+        file: File::Compositor,
+        path: &["touchpad", "scroll"],
+        // No default: absent is the pad's own, which libinput picks per model -- two fingers on
+        // any pad that can sense them.
+        kind: Kind::Enum {
+            default: None,
+            choices: &[
+                Choice {
+                    value: "two-finger",
+                    label: "Two fingers",
+                },
+                Choice {
+                    value: "edge",
+                    label: "Right edge",
+                },
+            ],
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Touchpad scrolling",
+        description: "Scroll with two fingers anywhere on the pad, or with one along its right \
+                      edge. Unset is the pad's own default.",
+    },
+    Setting {
+        key: "compositor.touchpad.secondary_click",
+        file: File::Compositor,
+        path: &["touchpad", "secondary_click"],
+        // No default, as scroll: libinput knows which method suits each clickpad.
+        kind: Kind::Enum {
+            default: None,
+            choices: &[
+                Choice {
+                    value: "fingers",
+                    label: "Two-finger press",
+                },
+                Choice {
+                    value: "corner",
+                    label: "Bottom-right corner",
+                },
+            ],
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Touchpad secondary click",
+        description: "On a touchpad with no separate buttons, what pressing the pad down does: \
+                      a two-finger press is the secondary click, or a press in the bottom-right \
+                      corner is. Unset is the pad's own default. Pads with buttons ignore it.",
+    },
+    Setting {
+        key: "compositor.touchpad.disable_with_mouse",
+        file: File::Compositor,
+        path: &["touchpad", "disable_with_mouse"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Turn off the touchpad while a mouse is connected",
+        description: "While a mouse is plugged in, the touchpad is ignored; unplugging the \
+                      mouse brings it back.",
     },
     Setting {
         key: "compositor.idle.blank_after_secs",

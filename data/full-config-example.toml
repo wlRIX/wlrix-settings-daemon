@@ -66,6 +66,26 @@ left_handed = false
 # Double-click time
 double_click_ms = 400
 
+[touchpad]
+# Touchpad acceleration
+acceleration = 0.0
+# Tap to click
+tap = true
+# Tap and drag
+tap_drag = true
+# Drag lock
+drag_lock = false
+# Natural scrolling
+natural_scroll = false
+# Disable while typing
+disable_while_typing = true
+# Touchpad scrolling
+# scroll =    # no default; unset by default
+# Touchpad secondary click
+# secondary_click =    # no default; unset by default
+# Turn off the touchpad while a mouse is connected
+disable_with_mouse = false
+
 [idle]
 # Blank the screen after (deprecated)
 # blank_after_secs =    # no default; unset by default
