@@ -916,31 +916,33 @@ pub const SETTINGS: &[Setting] = &[
         key: "idle.lock.command",
         file: File::Idle,
         path: &["lock", "command"],
-        kind: Kind::Str { default: None },
+        kind: Kind::Str {
+            default: Some("wlrix-lock"),
+        },
         owner: Owner::Idle,
         reload: Reload::Live,
         unit: Unit::None,
         summary: "Screen locker",
-        description: "The locker to run, e.g. \"wlrix-lock\". It must keep running until the \
+        description: "The locker to run; wlrix-lock, the desktop's own, unless another is \
+                      named, and an empty string for none. It must keep running until the \
                       session is unlocked -- wlrix-idle starts it only when it is not already \
                       running, so a locker that forks into the background (swaylock -f) is \
-                      started again on every timeout. Nothing by default: which locker a session \
-                      uses is a choice, and guessing at one that is not installed would turn \
-                      every lock into a silent no-op.",
+                      started again on every timeout.",
     },
     Setting {
         key: "idle.before_sleep.lock",
         file: File::Idle,
         path: &["before_sleep", "lock"],
         kind: Kind::Bool {
-            default: Some(false),
+            default: Some(true),
         },
         owner: Owner::Idle,
         reload: Reload::Live,
         unit: Unit::None,
         summary: "Lock before suspending",
         description: "Run the locker while logind holds the machine back from suspending, so \
-                      the screen is already locked when it wakes.",
+                      the screen is already locked when it wakes. On by default: a laptop must \
+                      never wake to an unlocked desktop.",
     },
     Setting {
         key: "idle.before_sleep.blank",
@@ -983,6 +985,118 @@ pub const SETTINGS: &[Setting] = &[
         description: "logind's InhibitDelayMaxSec is five seconds by default; past that it \
                       suspends regardless, so a longer wait here only means losing the race \
                       with the lock half-run.",
+    },
+    Setting {
+        key: "idle.lid.on_battery",
+        file: File::Idle,
+        path: &["lid", "on_battery"],
+        // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-idle's `LidAction` accepts.
+        kind: Kind::Enum {
+            default: Some("suspend"),
+            choices: &[
+                Choice {
+                    value: "suspend",
+                    label: "Suspend",
+                },
+                Choice {
+                    value: "hibernate",
+                    label: "Hibernate",
+                },
+                Choice {
+                    value: "lock",
+                    label: "Lock the screen",
+                },
+                Choice {
+                    value: "blank",
+                    label: "Turn the screen off",
+                },
+                Choice {
+                    value: "nothing",
+                    label: "Do nothing",
+                },
+            ],
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "When the lid is closed on battery",
+        description: "What closing the lid does while running on battery. Lock locks the session \
+                      and turns the screen off but stays awake. If the machine cannot \
+                      hibernate, it is locked instead.",
+    },
+    Setting {
+        key: "idle.lid.on_ac",
+        file: File::Idle,
+        path: &["lid", "on_ac"],
+        // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-idle's `LidAction` accepts.
+        kind: Kind::Enum {
+            default: Some("suspend"),
+            choices: &[
+                Choice {
+                    value: "suspend",
+                    label: "Suspend",
+                },
+                Choice {
+                    value: "hibernate",
+                    label: "Hibernate",
+                },
+                Choice {
+                    value: "lock",
+                    label: "Lock the screen",
+                },
+                Choice {
+                    value: "blank",
+                    label: "Turn the screen off",
+                },
+                Choice {
+                    value: "nothing",
+                    label: "Do nothing",
+                },
+            ],
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "When the lid is closed while plugged in",
+        description: "What closing the lid does while on external power and not docked.",
+    },
+    Setting {
+        key: "idle.lid.docked",
+        file: File::Idle,
+        path: &["lid", "docked"],
+        // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-idle's `LidAction` accepts.
+        kind: Kind::Enum {
+            default: Some("nothing"),
+            choices: &[
+                Choice {
+                    value: "suspend",
+                    label: "Suspend",
+                },
+                Choice {
+                    value: "hibernate",
+                    label: "Hibernate",
+                },
+                Choice {
+                    value: "lock",
+                    label: "Lock the screen",
+                },
+                Choice {
+                    value: "blank",
+                    label: "Turn the screen off",
+                },
+                Choice {
+                    value: "nothing",
+                    label: "Do nothing",
+                },
+            ],
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "When the lid is closed with another monitor",
+        description: "What closing the lid does with a docking station or another monitor \
+                      connected. The laptop's own panel is switched off either way, and its \
+                      windows move to the monitors left.",
     },
     Setting {
         key: "idle.gamepad.enable",
@@ -1109,9 +1223,10 @@ pub const SETTINGS: &[Setting] = &[
         owner: Owner::Idle,
         reload: Reload::Restart,
         unit: Unit::None,
-        summary: "Take logind's delay inhibitor",
-        description: "What makes the before-suspend actions above possible at all. With this \
-                      off, the machine suspends without waiting for them.",
+        summary: "Take logind's sleep and lid inhibitors",
+        description: "What makes the before-suspend actions and the lid settings above possible \
+                      at all. With this off, the machine suspends without waiting for them, and \
+                      logind's own HandleLidSwitch decides what the lid does.",
     },
     Setting {
         key: "idle.dbus.replace",

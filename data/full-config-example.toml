@@ -136,17 +136,25 @@ icon_theme = "wlrix"
 
 [lock]
 # Screen locker
-# command =    # no default; unset by default
+command = "wlrix-lock"
 
 [before_sleep]
 # Lock before suspending
-lock = false
+lock = true
 # Blank before suspending
 blank = false
 # Command to run before suspending
 # command =    # no default; unset by default
 # How long to hold suspend back
 timeout_secs = 4
+
+[lid]
+# When the lid is closed on battery
+on_battery = "suspend"
+# When the lid is closed while plugged in
+on_ac = "suspend"
+# When the lid is closed with another monitor
+docked = "nothing"
 
 [gamepad]
 # Count controller input as activity
@@ -167,7 +175,7 @@ devices = []
 screensaver = true
 # Serve org.freedesktop.PowerManagement.Inhibit
 power_management = true
-# Take logind's delay inhibitor
+# Take logind's sleep and lid inhibitors
 logind = true
 # Take the bus names from whoever holds them
 replace = false
