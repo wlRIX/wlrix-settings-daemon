@@ -119,6 +119,50 @@ pub const SETTINGS: &[Setting] = &[
                       screen when there is no picture or the mode is solid.",
     },
     // ---------------------------------------------------------------------------------------
+    // bluetooth.toml -- wlrix-bluetooth/src/config.rs
+    // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "bluetooth.indicator",
+        file: File::Bluetooth,
+        path: &["indicator"],
+        kind: Kind::Enum {
+            default: Some("auto"),
+            // Exactly what `#[serde(rename_all = "kebab-case")]` on wlrix-bluetooth's `Indicator`
+            // accepts.
+            choices: &[
+                Choice {
+                    value: "auto",
+                    label: "When there is a Bluetooth adapter",
+                },
+                Choice {
+                    value: "hidden",
+                    label: "Never",
+                },
+            ],
+        },
+        owner: Owner::Bluetooth,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Show the Bluetooth icon in the tray",
+        description: "Auto shows it whenever bluetoothd reports an adapter, on or off, and hides \
+                      it otherwise. Hidden keeps it out of the tray; the pairing agent keeps \
+                      running either way, since pairing from Bluetooth Settings needs it.",
+    },
+    Setting {
+        key: "bluetooth.battery_warnings",
+        file: File::Bluetooth,
+        path: &["battery_warnings"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Bluetooth,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Warn when a device's battery is low",
+        description: "A notification when a connected device that reports its battery -- \
+                      headphones, a mouse, a keyboard -- falls to 20% and again at 10%.",
+    },
+    // ---------------------------------------------------------------------------------------
     // clipboard.toml -- wlrix-clipboard/src/config.rs
     // ---------------------------------------------------------------------------------------
     Setting {

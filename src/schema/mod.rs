@@ -166,6 +166,8 @@ pub struct Choice {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Owner {
     Background,
+    /// `wlrix-bluetooth`, the Bluetooth indicator and pairing agent.
+    Bluetooth,
     /// `wlrix-clipboard`, the clipboard history daemon.
     Clipboard,
     Compositor,
@@ -203,6 +205,7 @@ impl Owner {
     pub fn program(self) -> Option<&'static str> {
         match self {
             Self::Background => Some("wlrix-bg"),
+            Self::Bluetooth => Some("wlrix-bluetooth"),
             Self::Clipboard => Some("wlrix-clipboard"),
             Self::Compositor => Some("wlrix-compositor"),
             Self::Desktop => Some("wlrix-desktop"),
@@ -236,6 +239,7 @@ impl Owner {
     pub fn pidfile(self) -> Option<&'static str> {
         match self {
             Self::Background => Some("wlrix-bg.pid"),
+            Self::Bluetooth => Some("wlrix-bluetooth.pid"),
             Self::Clipboard => Some("wlrix-clipboard.pid"),
             Self::Compositor => Some("wlrix-compositor.pid"),
             Self::Desktop => Some("wlrix-desktop.pid"),

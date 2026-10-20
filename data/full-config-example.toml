@@ -12,6 +12,12 @@ mode = "fill"
 # Desktop color
 color = "#555555"
 
+# ---- bluetooth.toml ----
+# Show the Bluetooth icon in the tray
+indicator = "auto"
+# Warn when a device's battery is low
+battery_warnings = true
+
 # ---- clipboard.toml ----
 # How many entries the clipboard history keeps
 max_entries = 50
