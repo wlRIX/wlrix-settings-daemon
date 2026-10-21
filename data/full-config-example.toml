@@ -140,6 +140,26 @@ icon_theme = "wlrix"
 
 # ---- idle.toml ----
 
+[plugged_in]
+# Dim the screen after (plugged in)
+dim_after_secs = 0
+# Turn the screen off after (plugged in)
+screen_off_after_secs = 0
+# Lock as the screen turns off (plugged in)
+lock = true
+# Sleep after (plugged in)
+suspend_after_secs = 0
+
+[on_battery]
+# Dim the screen after (on battery)
+dim_after_secs = 0
+# Turn the screen off after (on battery)
+screen_off_after_secs = 0
+# Lock as the screen turns off (on battery)
+lock = true
+# Sleep after (on battery)
+suspend_after_secs = 0
+
 [lock]
 # Screen locker
 command = "wlrix-lock"

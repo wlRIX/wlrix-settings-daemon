@@ -953,9 +953,126 @@ pub const SETTINGS: &[Setting] = &[
     // idle.toml -- wlrix-idle/src/config.rs
     //
     // `[[timeout]]` is absent for the same reason as `[[output]]`: it is a collection, and one
-    // countdown is four fields that only mean anything together. It is also the section most
-    // worth a bespoke UI rather than a generic one.
+    // countdown is four fields that only mean anything together. The two profiles below are
+    // what a panel sets instead -- Power Settings' When Idle group -- and `[[timeout]]` stays a
+    // hand-edited extra for custom commands.
     // ---------------------------------------------------------------------------------------
+    Setting {
+        key: "idle.plugged_in.dim_after_secs",
+        file: File::Idle,
+        path: &["plugged_in", "dim_after_secs"],
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 86_400,
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "Dim the screen after (plugged in)",
+        description: "Fade the screens to dark, and on a laptop lower the backlight to a third. Undone by any input. 0 is never; a dim at or after the screen-off or sleep time is left out.",
+    },
+    Setting {
+        key: "idle.plugged_in.screen_off_after_secs",
+        file: File::Idle,
+        path: &["plugged_in", "screen_off_after_secs"],
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 86_400,
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "Turn the screen off after (plugged in)",
+        description: "Switch every monitor off. 0 is never.",
+    },
+    Setting {
+        key: "idle.plugged_in.lock",
+        file: File::Idle,
+        path: &["plugged_in", "lock"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Lock as the screen turns off (plugged in)",
+        description: "Start the locker when the monitors switch off for being idle.",
+    },
+    Setting {
+        key: "idle.plugged_in.suspend_after_secs",
+        file: File::Idle,
+        path: &["plugged_in", "suspend_after_secs"],
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 86_400,
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "Sleep after (plugged in)",
+        description: "Suspend the machine; the session locks first, as before any suspend. 0 is never. An application playing a video holds it off, as it holds off the rest.",
+    },
+    Setting {
+        key: "idle.on_battery.dim_after_secs",
+        file: File::Idle,
+        path: &["on_battery", "dim_after_secs"],
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 86_400,
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "Dim the screen after (on battery)",
+        description: "Fade the screens to dark, and on a laptop lower the backlight to a third. Undone by any input. 0 is never; a dim at or after the screen-off or sleep time is left out. Without an [on_battery] section the plugged-in values apply on battery too.",
+    },
+    Setting {
+        key: "idle.on_battery.screen_off_after_secs",
+        file: File::Idle,
+        path: &["on_battery", "screen_off_after_secs"],
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 86_400,
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "Turn the screen off after (on battery)",
+        description: "Switch every monitor off. 0 is never. Without an [on_battery] section the plugged-in values apply on battery too.",
+    },
+    Setting {
+        key: "idle.on_battery.lock",
+        file: File::Idle,
+        path: &["on_battery", "lock"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Lock as the screen turns off (on battery)",
+        description: "Start the locker when the monitors switch off for being idle. Without an [on_battery] section the plugged-in values apply on battery too.",
+    },
+    Setting {
+        key: "idle.on_battery.suspend_after_secs",
+        file: File::Idle,
+        path: &["on_battery", "suspend_after_secs"],
+        kind: Kind::Int {
+            default: Some(0),
+            min: 0,
+            max: 86_400,
+        },
+        owner: Owner::Idle,
+        reload: Reload::Live,
+        unit: Unit::Seconds,
+        summary: "Sleep after (on battery)",
+        description: "Suspend the machine; the session locks first, as before any suspend. 0 is never. An application playing a video holds it off, as it holds off the rest. Without an [on_battery] section the plugged-in values apply on battery too.",
+    },
     Setting {
         key: "idle.lock.command",
         file: File::Idle,
