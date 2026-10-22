@@ -1526,6 +1526,21 @@ pub const SETTINGS: &[Setting] = &[
                       through anything transparent, and over the whole screen when there is no \
                       picture or the mode is solid.",
     },
+    Setting {
+        key: "lock.unlock.fingerprint",
+        file: File::Lock,
+        path: &["unlock", "fingerprint"],
+        kind: Kind::Bool {
+            default: Some(true),
+        },
+        owner: Owner::Lock,
+        reload: Reload::None,
+        unit: Unit::None,
+        summary: "Unlock with a fingerprint",
+        description: "Accept an enrolled finger on the reader as well as the password, at the \
+                      same time. Does nothing without fprintd, a reader and a finger enrolled in \
+                      User Accounts.",
+    },
     // ---------------------------------------------------------------------------------------
     // network.toml -- wlrix-network/src/config.rs
     // ---------------------------------------------------------------------------------------
