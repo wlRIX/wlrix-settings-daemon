@@ -667,6 +667,20 @@ pub const SETTINGS: &[Setting] = &[
                       mouse brings it back.",
     },
     Setting {
+        key: "compositor.touchscreen.output",
+        file: File::Compositor,
+        path: &["touchscreen", "output"],
+        kind: Kind::Str { default: None },
+        owner: Owner::Compositor,
+        // Read on every touch, so the next one lands on the new monitor.
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Touchscreen monitor",
+        description: "The connector name of the monitor the touchscreen is part of, e.g. \
+                      \"eDP-1\" or \"HDMI-A-1\". Empty uses the one udev names for the device, \
+                      else the built-in panel, else the first monitor.",
+    },
+    Setting {
         key: "compositor.idle.blank_after_secs",
         file: File::Compositor,
         path: &["idle", "blank_after_secs"],
