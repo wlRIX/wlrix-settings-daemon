@@ -38,6 +38,9 @@ toml = "1"
 # last one it appends a *second* `[keyboard]` table, which `toml` then rejects, costing the user
 # their whole compositor config. Deleting it is half the reason this program exists.
 toml_edit = "0.25"
+# Running the Set Home Session wait -- a signal, then up to three seconds watching for the file --
+# off the executor, so other calls are answered meanwhile. Already in the tree via zbus.
+blocking = "1"
 # `fs::inotify`, for noticing that a config file was edited by hand -- which must keep working,
 # and is what the change signal is for. Already in the tree via zbus's async-io, the same reason
 # wlrix-desktop and wlrix-idle reach for it; the watch is modeled on wlrix-desktop's.

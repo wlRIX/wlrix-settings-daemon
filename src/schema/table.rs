@@ -421,6 +421,32 @@ pub const SETTINGS: &[Setting] = &[
                       a wide margin on a large window.",
     },
     Setting {
+        key: "compositor.session.save",
+        file: File::Compositor,
+        path: &["session", "save"],
+        kind: Kind::Enum {
+            default: Some("continuously"),
+            // What `#[serde(rename_all = "lowercase")]` on the compositor's `SaveMode` accepts.
+            choices: &[
+                Choice {
+                    value: "continuously",
+                    label: "Continuously",
+                },
+                Choice {
+                    value: "explicitly",
+                    label: "Explicitly",
+                },
+            ],
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Save windows and desks",
+        description: "Which windows are reopened at the next login. Continuously reopens the \
+                      windows open at logout. Explicitly reopens the home session saved with \
+                      Set Home Session, with its desks, and nothing if none was saved.",
+    },
+    Setting {
         key: "compositor.cursor.theme",
         file: File::Compositor,
         path: &["cursor", "theme"],

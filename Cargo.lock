@@ -886,6 +886,7 @@ dependencies = [
 name = "wlrix-settings-daemon"
 version = "0.1.0"
 dependencies = [
+ "blocking",
  "libc",
  "rustix",
  "serde",

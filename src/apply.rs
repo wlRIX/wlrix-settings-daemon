@@ -121,6 +121,69 @@ fn reload_via_pidfile(path: &std::path::Path, owner: Owner) -> Outcome {
     }
 }
 
+/// How long Set Home Session waits for the compositor to write the file.
+const HOME_SESSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+
+/// Set Home Session: ask the compositor to save the windows open now as the home session, and
+/// wait for it to do so. Answers how many windows the home session holds.
+///
+/// An action rather than a setting, so it does not go through the store: the compositor writes
+/// `$XDG_STATE_HOME/wlrix/home-session.toml` itself, on `SIGUSR2`, because it is the only
+/// process that knows where the windows are. This waits a bounded time for the file to change,
+/// so the panel can say it worked rather than assume it.
+///
+/// Blocking; the D-Bus method runs it off the executor.
+pub fn save_home_session() -> Result<u32, String> {
+    let name = Owner::Compositor
+        .pidfile()
+        .expect("the compositor has a pidfile");
+    let pid = std::fs::read_to_string(runtime_dir().join(name))
+        .ok()
+        .and_then(|text| parse_pid(&text))
+        .ok_or_else(|| "the compositor is not running".to_string())?;
+    let file = home_session_file()
+        .ok_or_else(|| "there is no state directory ($XDG_STATE_HOME / $HOME)".to_string())?;
+    let modified = |file: &std::path::Path| std::fs::metadata(file).ok()?.modified().ok();
+    let before = modified(&file);
+
+    signal(pid, libc::SIGUSR2)?;
+
+    let deadline = std::time::Instant::now() + HOME_SESSION_TIMEOUT;
+    while std::time::Instant::now() < deadline {
+        let now = modified(&file);
+        if now.is_some() && now != before {
+            let text = std::fs::read_to_string(&file)
+                .map_err(|err| format!("could not read {}: {err}", file.display()))?;
+            tracing::info!("the compositor saved the home session");
+            return Ok(count_windows(&text));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    Err("the compositor did not save the home session".to_string())
+}
+
+/// Where the compositor writes the home session.
+fn home_session_file() -> Option<PathBuf> {
+    let state = match std::env::var_os("XDG_STATE_HOME").filter(|dir| !dir.is_empty()) {
+        Some(dir) => PathBuf::from(dir),
+        None => PathBuf::from(std::env::var_os("HOME")?).join(".local/state"),
+    };
+    Some(state.join("wlrix/home-session.toml"))
+}
+
+/// How many windows a saved session holds: every `[[app.window]]`.
+fn count_windows(text: &str) -> u32 {
+    let Ok(table) = text.parse::<toml::Table>() else {
+        return 0;
+    };
+    let apps = table.get("app").and_then(toml::Value::as_array);
+    apps.into_iter()
+        .flatten()
+        .filter_map(|app| app.get("window")?.as_array())
+        .map(|windows| windows.len() as u32)
+        .sum()
+}
+
 /// `$XDG_RUNTIME_DIR`, else the temp directory -- the fallback every wlRIX pidfile uses.
 fn runtime_dir() -> PathBuf {
     std::env::var_os("XDG_RUNTIME_DIR")
@@ -157,6 +220,16 @@ mod tests {
     // The pid parsing and signaling below are lifted from `wlrix-desktop/src/session.rs`,
     // tests included: they are the part where being wrong means signaling a stranger's
     // process.
+
+    #[test]
+    fn windows_are_counted_across_apps() {
+        let text = "version = 1\n\n[[app]]\nargv = [\"a\"]\n\n[[app.window]]\napp_id = \"a\"\n\n\
+                    [[app.window]]\napp_id = \"a\"\n\n[[app]]\nargv = [\"b\"]\n\n\
+                    [[app.window]]\napp_id = \"b\"\n";
+        assert_eq!(count_windows(text), 3);
+        assert_eq!(count_windows("version = 1\n"), 0);
+        assert_eq!(count_windows("not toml ["), 0);
+    }
 
     #[test]
     fn a_pidfile_is_a_bare_number() {

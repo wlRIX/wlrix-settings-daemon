@@ -67,6 +67,7 @@ sounds.theme                    ~/.config/wlrix/sounds.toml       theme
 | `Set` / `SetMany`               | `(sv) → a{ss}` / `(a{sv}) → a{ss}` | write; answers what became of it, per owner                        |
 | `Reset` / `ResetNamespace`      | `(as) → a{ss}` / `(s) → a{ss}`     | remove keys, so they fall back to their defaults                   |
 | `Reload`                        | `() → a{ss}`                       | re-read everything from disk                                       |
+| `SaveHomeSession`               | `() → u`                           | Set Home Session: `SIGUSR2` the compositor, wait for the file, count its windows |
 | `Invalid`                       | property `a{ss}`                   | files that will not currently parse, and why                       |
 | `Version`, `Namespaces`         | properties                         | `Version` is 2 since fan-out keys                                  |
 | `Groups`                        | property `as`                      | the fan-out keys: `appearance.palette`                             |

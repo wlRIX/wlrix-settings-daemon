@@ -72,6 +72,8 @@ pub enum Error {
     Refused(String),
     /// The file could not be written.
     WriteFailed(String),
+    /// Set Home Session did not happen: the compositor is not running, or did not answer.
+    NotSaved(String),
 }
 
 impl From<store::Error> for Error {
@@ -260,6 +262,17 @@ impl Settings {
         let changed = self.store.reset_namespace(namespace)?;
         announce(&emitter, &changed, origin(&header)).await;
         Ok(outcomes(&changed))
+    }
+
+    /// Set Home Session: save the windows open now as the ones every login reopens, under
+    /// `compositor.session.save = "explicitly"`. Answers how many windows were saved.
+    ///
+    /// Waits for the compositor to write the file, up to a few seconds, so the panel can say
+    /// it worked. See `apply::save_home_session`.
+    async fn save_home_session(&self) -> Result<u32> {
+        blocking::unblock(crate::apply::save_home_session)
+            .await
+            .map_err(Error::NotSaved)
     }
 
     /// Re-read every file from disk and announce anything that moved.
