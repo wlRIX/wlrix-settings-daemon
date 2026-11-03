@@ -421,6 +421,22 @@ pub const SETTINGS: &[Setting] = &[
                       a wide margin on a large window.",
     },
     Setting {
+        key: "compositor.windows.iconbox",
+        file: File::Compositor,
+        path: &["windows", "iconbox"],
+        kind: Kind::Bool {
+            default: Some(false),
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Display Windows Overview",
+        description: "On, every window gets a tile in the iconbox window, which the compositor \
+                      opens, and minimizing no longer puts a tile on the desktop. Clicking a \
+                      tile minimizes or restores its window. IRIX applied this on a window \
+                      manager restart; wlRIX applies it at once.",
+    },
+    Setting {
         key: "compositor.session.save",
         file: File::Compositor,
         path: &["session", "save"],
