@@ -723,6 +723,109 @@ pub const SETTINGS: &[Setting] = &[
                       else the built-in panel, else the first monitor.",
     },
     Setting {
+        key: "compositor.night_light.mode",
+        file: File::Compositor,
+        path: &["night_light", "mode"],
+        kind: Kind::Enum {
+            default: Some("off"),
+            // Exactly what `#[serde(rename_all = "lowercase")]` on the compositor's
+            // `NightLightMode` accepts.
+            choices: &[
+                Choice {
+                    value: "off",
+                    label: "Always off",
+                },
+                Choice {
+                    value: "on",
+                    label: "Always on",
+                },
+                Choice {
+                    value: "auto",
+                    label: "Sunset to sunrise",
+                },
+            ],
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Night light",
+        description: "Warm the colors of every screen to cut down on blue light: never, always,                       or from sunset to sunrise, fading in and out through twilight. The                       compositor does this itself, so it works on HDR screens and in virtual                       machines as well.",
+    },
+    Setting {
+        key: "compositor.night_light.temperature",
+        file: File::Compositor,
+        path: &["night_light", "temperature"],
+        // The compositor clamps to the same range, so a hand-edited value outside it is safe;
+        // the range here is what a slider offers.
+        kind: Kind::Int {
+            default: Some(4500),
+            min: 1000,
+            max: 6500,
+        },
+        owner: Owner::Compositor,
+        // Live, and more: a new temperature is shown at full strength for a few seconds even
+        // when the schedule has the night light off, so a slider can be judged at midday.
+        reload: Reload::Live,
+        unit: Unit::Kelvin,
+        summary: "Night color temperature",
+        description: "How warm the screen gets at night. 6500 is daylight, which is no change                       at all; lower is warmer, and 1000 is deep orange.",
+    },
+    Setting {
+        key: "compositor.night_light.location",
+        file: File::Compositor,
+        path: &["night_light", "location"],
+        kind: Kind::Enum {
+            default: Some("timezone"),
+            // What `#[serde(rename_all = "lowercase")]` on the compositor's
+            // `NightLightLocation` accepts.
+            choices: &[
+                Choice {
+                    value: "timezone",
+                    label: "From the time zone",
+                },
+                Choice {
+                    value: "manual",
+                    label: "Latitude and longitude",
+                },
+            ],
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::None,
+        summary: "Night light location",
+        description: "Where sunset and sunrise are worked out for. The time zone's own                       coordinates need no setting up and are right to within the width of the                       zone; a latitude and longitude are exact.",
+    },
+    Setting {
+        key: "compositor.night_light.latitude",
+        file: File::Compositor,
+        path: &["night_light", "latitude"],
+        kind: Kind::Float {
+            default: Some(0.0),
+            min: -90.0,
+            max: 90.0,
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::Degrees,
+        summary: "Latitude",
+        description: "Degrees north of the equator; negative is south. Only used when the                       night light's location is a latitude and longitude.",
+    },
+    Setting {
+        key: "compositor.night_light.longitude",
+        file: File::Compositor,
+        path: &["night_light", "longitude"],
+        kind: Kind::Float {
+            default: Some(0.0),
+            min: -180.0,
+            max: 180.0,
+        },
+        owner: Owner::Compositor,
+        reload: Reload::Live,
+        unit: Unit::Degrees,
+        summary: "Longitude",
+        description: "Degrees east of Greenwich; negative is west. Only used when the night                       light's location is a latitude and longitude.",
+    },
+    Setting {
         key: "compositor.idle.blank_after_secs",
         file: File::Compositor,
         path: &["idle", "blank_after_secs"],

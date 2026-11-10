@@ -57,6 +57,12 @@ raise_on_click = true
 opaque_move = true
 # Show window contents while resizing
 opaque_resize = true
+# Display Windows Overview
+iconbox = false
+
+[session]
+# Save windows and desks
+save = "continuously"
 
 [cursor]
 # Cursor theme
@@ -91,6 +97,22 @@ disable_while_typing = true
 # secondary_click =    # no default; unset by default
 # Turn off the touchpad while a mouse is connected
 disable_with_mouse = false
+
+[touchscreen]
+# Touchscreen monitor
+# output =    # no default; unset by default
+
+[night_light]
+# Night light
+mode = "off"
+# Night color temperature
+temperature = 4500
+# Night light location
+location = "timezone"
+# Latitude
+latitude = 0.0
+# Longitude
+longitude = 0.0
 
 [idle]
 # Blank the screen after (deprecated)
@@ -227,6 +249,10 @@ time_format = "%H:%M"
 mode = "fill"
 # Lock screen color
 color = "#555555"
+
+[unlock]
+# Unlock with a fingerprint
+fingerprint = true
 
 # ---- network.toml ----
 # Show the Wi-Fi icon in the tray

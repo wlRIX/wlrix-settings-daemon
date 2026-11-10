@@ -300,6 +300,10 @@ pub enum Unit {
     Seconds,
     Hertz,
     Pixels,
+    /// A color temperature.
+    Kelvin,
+    /// An angle: a latitude or a longitude.
+    Degrees,
 }
 
 impl Unit {
@@ -310,6 +314,8 @@ impl Unit {
             Self::Seconds => "s",
             Self::Hertz => "hz",
             Self::Pixels => "px",
+            Self::Kelvin => "k",
+            Self::Degrees => "deg",
         }
     }
 }
